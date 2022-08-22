@@ -318,49 +318,57 @@ def devices_cleared(notification):
     control_write(CTRL_ARG_DEVICE, CTRL_CMD_SET, " ")
 
 
-def handle_control_command(sniffer, arg, typ, payload):
+def handle_control_command(sniffer, arg, typ, payload, auto_test=False, device_address=None):
     """Handle command from control channel"""
     global last_used_key_type
 
-    if arg == CTRL_ARG_DEVICE:
-        if payload == b' ':
-            scan_for_devices(sniffer)
-        else:
-            values = payload
-            values = values.replace(b'[', b'')
-            values = values.replace(b']', b'')
-            device_address = values.split(b',')
+    if auto_test:
+        # Instead of finding the device address, directly get from the user input
+        device = Devices.Device(address=device_address, name='""', RSSI=0)
+        follow_device(sniffer, device)
+    else:
+        if arg == CTRL_ARG_DEVICE:
+            if payload == b' ':
+                scan_for_devices(sniffer)
+            else:
+                values = payload
+                values = values.replace(b'[', b'')
+                values = values.replace(b']', b'')
+                device_address = values.split(b',')
 
-            logging.info('follow_device: {}'.format(device_address))
-            for i in range(6):
-                device_address[i] = int(device_address[i])
+                logging.info('follow_device: {}'.format(device_address))
+                for i in range(6):
+                    device_address[i] = int(device_address[i])
 
-            device_address[6] = 1 if device_address[6] == b' 1' else 0
+                device_address[6] = 1 if device_address[6] == b' 1' else 0
 
-            device = Devices.Device(address=device_address, name='""', RSSI=0)
+                device = Devices.Device(address=device_address, name='""', RSSI=0)
 
-            follow_device(sniffer, device)
+                follow_device(sniffer, device)
 
-    elif arg == CTRL_ARG_DEVICE_CLEAR:
-        clear_devices(sniffer)
-    elif arg == CTRL_ARG_KEY_TYPE:
-        last_used_key_type = int(payload.decode('utf-8'))
-    elif arg == CTRL_ARG_KEY_VAL:
-        set_key_value(sniffer, payload)
-    elif arg == CTRL_ARG_ADVHOP:
-        set_advhop(sniffer, payload)
+        elif arg == CTRL_ARG_DEVICE_CLEAR:
+            clear_devices(sniffer)
+        elif arg == CTRL_ARG_KEY_TYPE:
+            last_used_key_type = int(payload.decode('utf-8'))
+        elif arg == CTRL_ARG_KEY_VAL:
+            set_key_value(sniffer, payload)
+        elif arg == CTRL_ARG_ADVHOP:
+            set_advhop(sniffer, payload)
 
 
-def control_read_initial_values(sniffer):
+def control_read_initial_values(sniffer, auto_test=False, device_address=None):
     """Read initial control values"""
-    initialized = False
+    if auto_test:
+        handle_control_command(sniffer, None, None, None, auto_test=auto_test, device_address=device_address)
+    else:
+        initialized = False
 
-    while not initialized:
-        arg, typ, payload = control_read()
-        if typ == CTRL_CMD_INIT:
-            initialized = True
-        else:
-            handle_control_command(sniffer, arg, typ, payload)
+        while not initialized:
+            arg, typ, payload = control_read()
+            if typ == CTRL_CMD_INIT:
+                initialized = True
+            else:
+                handle_control_command(sniffer, arg, typ, payload)
 
 
 def control_write_defaults():
@@ -611,7 +619,8 @@ def teardown_extcap_log_handler():
         extcap_log_handler = None
 
 
-def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_test=False, timeout=120, given_name=None):
+def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_test=False, timeout=120, given_name=None,
+                    dev_addr=None):
     """Start the sniffer to capture packets"""
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
@@ -655,7 +664,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
         if fn_ctrl_in is not None and fn_ctrl_out is not None:
             # First read initial control values
-            control_read_initial_values(sniffer)
+            control_read_initial_values(sniffer, auto_test=auto_test, device_address=dev_addr)
 
             # Then write default values
             control_write_defaults()
@@ -665,10 +674,22 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             write_new_packets = True
 
             # Start the control loop
-            logging.info("control loop")
-            control_loop(sniffer)
-            logging.info("exiting control loop")
-
+            if not auto_test:
+                logging.info("control loop")
+                control_loop(sniffer)
+                logging.info("exiting control loop")
+            else:
+                start_time = time.time()
+                logging.info(f'start time: {time.ctime(start_time)}')
+                while True:
+                    # Wait for keyboardinterrupt
+                    if auto_test:
+                        curr = time.time()
+                        delta_secs = curr - start_time
+                        if delta_secs > timeout:
+                            logging.info(f'end time: {time.ctime(curr)}, totally {delta_secs:.0f} secs.')
+                            logging.info("")
+                            break
         else:
             logging.info("")
             # Start receiving packets
@@ -683,7 +704,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                     delta_secs = curr - start_time
                     if delta_secs > timeout:
                         logging.info(f'end time: {time.ctime(curr)}, totally {delta_secs:.0f} secs.')
+                        logging.info("")
                         break
+
     except Exceptions.LockedException as e:
         logging.info('{}'.format(e.message))
 
@@ -765,7 +788,6 @@ def goodbye():
 
 
 if __name__ == '__main__':
-
     # Capture options
     parser = argparse.ArgumentParser(description="Nordic Semiconductor nRF Sniffer for Bluetooth LE extcap plugin")
 
@@ -878,12 +900,19 @@ if __name__ == '__main__':
         try:
             logging.info('sniffer capture')
             if args.auto_test:
-                given_name = interface + "_" + args.device + "_" \
+                name = interface + "_" + args.device + "_" \
                              + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
+                # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                base_dir = os.getcwd()
+                given_name = os.path.join(base_dir, "output", name)
             else:
                 given_name = None
+
+            # TODO: get the device address from the argument
+            device_addr = [0x00, 0x18, 0x80, 0x04, 0x52, 0x11, 0x00]  # TODO: why [6] is 0?
             sniffer_capture(interface, args.baudrate, args.fifo, args.extcap_control_in, args.extcap_control_out,
-                            auto_test=args.auto_test, timeout=args.timeout, given_name=given_name)
+                            auto_test=args.auto_test, timeout=args.timeout, given_name=given_name,
+                            dev_addr=device_addr)
         except KeyboardInterrupt:
             pass
         except Exception as e:
@@ -895,5 +924,8 @@ if __name__ == '__main__':
     else:
         parser.print_help()
         sys.exit(ERROR_USAGE)
+
+    if args.auto_test:
+        print(f'pcap file: {given_name}')
 
     logging.info('main exit PID {}'.format(os.getpid()))

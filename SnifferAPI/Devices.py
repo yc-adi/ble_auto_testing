@@ -120,7 +120,10 @@ class DeviceList(Notifications.Notifier):
         if device in self.devices:
             for dev in self.devices:
                 dev.followed = False
+
             device.followed = True
+
+        device.followed = True  # for auto_test  # remove me !!!
         self.notify("DEVICE_FOLLOWED", device)
 
     def asList(self):

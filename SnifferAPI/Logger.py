@@ -35,8 +35,12 @@
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-import time, os, logging, traceback, threading
+import logging
 import logging.handlers as logHandlers
+import os
+import threading
+import time
+import traceback
 
 #################################################################
 # This file contains the logger. To log a line, simply write    #
@@ -75,7 +79,9 @@ def initLogger():
     try:
         global logFileName
         if logFileName is None:
-            logFileName = os.path.join(DEFAULT_LOG_FILE_DIR, DEFAULT_LOG_FILE_NAME)
+            #logFileName = os.path.join(DEFAULT_LOG_FILE_DIR, DEFAULT_LOG_FILE_NAME)
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            logFileName = os.path.join(base_dir, "output", "sniffer.log")
 
         # First, make sure that the directory exists
         if not os.path.isdir(os.path.dirname(logFileName)):

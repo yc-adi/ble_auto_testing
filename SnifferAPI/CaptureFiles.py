@@ -48,7 +48,7 @@ DEFAULT_CAPTURE_FILE_NAME = "capture.pcap"
 
 def get_capture_file_path(capture_file_path=None, auto_test=False, given_name=None):
     if auto_test and given_name is not None:
-        default_path = os.path.join(DEFAULT_CAPTURE_FILE_DIR, given_name)
+        default_path = given_name
     else:
         default_path = os.path.join(DEFAULT_CAPTURE_FILE_DIR, DEFAULT_CAPTURE_FILE_NAME)
 

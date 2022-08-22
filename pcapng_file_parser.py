@@ -145,5 +145,7 @@ if __name__ == "__main__":
             print("PASS")
         else:
             print("FAIL")
+    else:
+        print("No TIFS captured.")
 
     # print("Done!")
