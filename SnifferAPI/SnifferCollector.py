@@ -265,7 +265,7 @@ class SnifferCollector(Notifications.Notifier):
 
     def _startFollowing(self, device, followOnlyAdvertisements = False, followOnlyLegacy = False, followCoded = False):
         self._devices.setFollowed(device)
-        logging.info("Sniffing device " + str(self._devices.index(device)) + ' - "'+device.name+'"')
+        logging.info("Sniffing device " + str(self._devices.index(device)) + ' - "' + device.name + '"')
         self._packetReader.sendFollow(device.address, followOnlyAdvertisements, followOnlyLegacy, followCoded)
         self._setState(STATE_FOLLOWING)
 

@@ -157,6 +157,15 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
     def setSupportedProtocolVersion(self, suportedProtocolVersion):
         self._packetReader.setSupportedProtocolVersion(suportedProtocolVersion)
 
+    def get_dev_addr(self, target_dev_name):
+        """Get the target device address from its name
+        """
+        for collected_dev in self._devices.devices:
+            if collected_dev.name == '"' + target_dev_name + '"':
+                return collected_dev.address
+
+        return [0, 0, 0, 0, 0, 0, 0]
+
     # Gracefully shut down the sniffer threads and connections.
     # If join is True, join the sniffer thread until it quits.
     # Returns nothing.

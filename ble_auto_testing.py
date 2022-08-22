@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # TODO: set/get the interface and device names
     interface = "COM4-None"
     device = "Periph"
-    timeout = 10  # secs
+    timeout = 60  # secs
     res = run_sniffer(interface, device, timeout)
     pcap_file = res["pcap_file_name"]
     print(f'Parse file: {pcap_file}')
@@ -148,3 +148,5 @@ if __name__ == "__main__":
 
         file_type = 1
         run_parser(file_type, pcapng_file)
+
+# TODO: capture the slave PDU

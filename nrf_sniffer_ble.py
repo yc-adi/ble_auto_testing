@@ -620,7 +620,7 @@ def teardown_extcap_log_handler():
 
 
 def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_test=False, timeout=120, given_name=None,
-                    dev_addr=None):
+                    target_device=None):
     """Start the sniffer to capture packets"""
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
@@ -664,13 +664,20 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
         if fn_ctrl_in is not None and fn_ctrl_out is not None:
             # First read initial control values
-            control_read_initial_values(sniffer, auto_test=auto_test, device_address=dev_addr)
+            if auto_test:
+                # Get the target device address
+                time.sleep(5)
+                target_dev_addr = sniffer.get_dev_addr(target_device)
+                control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
+            else:
+                control_read_initial_values(sniffer)
 
             # Then write default values
             control_write_defaults()
             logging.info("defaults written")
 
             # Start receiving packets
+            logging.info("")
             write_new_packets = True
 
             # Start the control loop
@@ -908,11 +915,9 @@ if __name__ == '__main__':
             else:
                 given_name = None
 
-            # TODO: get the device address from the argument
-            device_addr = [0x00, 0x18, 0x80, 0x04, 0x52, 0x11, 0x00]  # TODO: why [6] is 0?
             sniffer_capture(interface, args.baudrate, args.fifo, args.extcap_control_in, args.extcap_control_out,
                             auto_test=args.auto_test, timeout=args.timeout, given_name=given_name,
-                            dev_addr=device_addr)
+                            target_device=args.device)
         except KeyboardInterrupt:
             pass
         except Exception as e:

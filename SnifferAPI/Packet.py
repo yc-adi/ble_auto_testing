@@ -168,6 +168,7 @@ class PacketReader(Notifications.Notifier):
                 and packet.packetCounter != (self.lastReceivedPacket.packetCounter + 1) % PACKET_COUNTER_CAP \
                 and self.lastReceivedPacket.packetCounter != 0:
 
+            # TODO: find out where the gap comes from.
             logging.info("gap in packets, between " + str(self.lastReceivedPacket.packetCounter) + " and "
                          + str(packet.packetCounter) + " packet before: " + str(self.lastReceivedPacket.packetList)
                          + " packet after: " + str(packet.packetList))
@@ -245,7 +246,8 @@ class PacketReader(Notifications.Notifier):
             return packet
 
     def sendPacket(self, id, payload):
-        packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + toLittleEndian(self.packetCounter, 2) + [id] + payload
+        packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + \
+                     toLittleEndian(self.packetCounter, 2) + [id] + payload
         packetList = self.encodeToSLIP(packetList)
         self.packetCounter += 1
         self.uart.writeList(packetList)
@@ -324,7 +326,7 @@ class Packet:
     def __init__(self, packetList, is_parser=False, packet_reader=None, file_type=0):
         # By default, Packet is used for Sniffer packet generation. This code can be
         # re-used for pcapng file parsing.
-        self.end_to_start = None  # T_ifs
+        self.end_to_start = 0  # T_ifs
         self.packet_reader = packet_reader
 
         self.eventCounter = None
@@ -337,6 +339,7 @@ class Packet:
         self.blePacket = None
         self.bleHeaderLength = None
         self.is_parser = is_parser
+        self.last_ble_packet = None
 
         try:
             if not packetList:
@@ -485,11 +488,11 @@ class Packet:
                         #
                         # Check T_ifs
                         #
-                        if self.end_to_start is not None \
+                        if self.packet_reader is not None \
                                 and self.packet_reader.last_ble_packet is not None \
                                 and self.blePacket is not None:
                             cases = [
-                                self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
+                                # self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
                                 self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
                             ]
                             if any(cases):
