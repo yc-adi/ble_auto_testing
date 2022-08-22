@@ -80,17 +80,20 @@ def run_sniffer(interface_name: str, device_name: str, timeout: int) -> dict:
     return res
 
 
-def run_parser(pcapng_file: str):
+def run_parser(file_type: int, pcapng_file: str):
     """Run the pcap/pcapng file parser on the saved sniffer file
         Example command: python -m pcapng_file_parser
 
         Args:
+            file_type:
+                0: Wireshark saved pcapng file
+                1: pcap file converted pcapng file
             pcapng_file: the saved sniffer pcapng file name with path
 
         Returns:
             None
     """
-    parse_pcapng_file(pcapng_file)
+    parse_pcapng_file(file_type, pcapng_file)
 
     if len(all_tifs) > 0:
         max_tifs = max(all_tifs)
@@ -143,4 +146,5 @@ if __name__ == "__main__":
         pcapng_file = pcap_file.replace(".pcap", ".pcapng")
         convert_pcap_to_pcapng(pcap_file, pcapng_file)
 
-        run_parser(pcapng_file)
+        file_type = 1
+        run_parser(file_type, pcapng_file)

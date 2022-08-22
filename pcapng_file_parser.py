@@ -27,7 +27,7 @@ class BleSnifferPacketParser(object):
         # packet_id, packet_len, flags,
 
 
-def parse_pcapng_file(file):
+def parse_pcapng_file(file_type, file):
     """parse the saved pcapng file.
     @see [python-pcapng wireshark 包解析](https://blog.csdn.net/weifengdq/article/details/117751828)
     """
@@ -67,7 +67,8 @@ def parse_pcapng_file(file):
 
                 try:
                     packet_list = block.packet_data[1:]
-                    packet = Packet.Packet(packet_list, is_parser=True, packet_reader=packet_reader)
+                    packet = Packet.Packet(packet_list, is_parser=True, packet_reader=packet_reader,
+                                           file_type=file_type)
 
                     if packet.valid:
                         packet_reader.handlePacketCompatibility(packet)
@@ -113,7 +114,7 @@ def parse_pcapng_file(file):
                     else:
                         logging.info("Unknown packet ID")
 
-                    packet_reader.handlePacketHistory(packet)
+                    packet_reader.handlePacketHistory(packet)  # Will save this packet as last packet
                 packet_ndx += 1
 
             if packet_ndx > 10:
@@ -122,18 +123,23 @@ def parse_pcapng_file(file):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(f'Please give the pcapng file name with full path.')
+    if len(sys.argv) != 3:
+        print(f'Please give the pcapng file type and name with full path.')
         exit(1)
 
     # file_name = r'C:\Users\Ycai3\Documents\Ellisys\Captures\fit_01.pcapng'
-    file_name = sys.argv[1]
+    file_type = int(sys.argv[1])
+    if file_type != 0 and file_type != 1:
+        print(f'file type should be 0 (Wireshark saved pcapng file) or 1 (pcap converted pcapng file).')
+        exit(2)
+
+    file_name = sys.argv[2]
 
     if not exists(file_name):
         print(f'File "{file_name}" does not exist.')
-        exit(2)
+        exit(3)
 
-    parse_pcapng_file(file_name)
+    parse_pcapng_file(file_type, file_name)
 
     if len(all_tifs) > 0:
         max_tifs = max(all_tifs)

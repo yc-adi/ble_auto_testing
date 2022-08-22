@@ -39,7 +39,8 @@ import time, logging, os, sys, serial
 from .Types import *
 
 
-ADV_ACCESS_ADDRESS = [0xD6, 0xBE, 0x89, 0x8E]
+# ADV_ACCESS_ADDRESS = [0xD6, 0xBE, 0x89, 0x8E]
+ADV_ACCESS_ADDRESS = b'\xd6\xbe\x89\x8e'
 
 SYNCWORD_POS = 0
 PAYLOAD_LEN_POS_V1 = 1
@@ -320,7 +321,7 @@ class PacketReader(Notifications.Notifier):
 
 
 class Packet:
-    def __init__(self, packetList, is_parser=False, packet_reader=None):
+    def __init__(self, packetList, is_parser=False, packet_reader=None, file_type=0):
         # By default, Packet is used for Sniffer packet generation. This code can be
         # re-used for pcapng file parsing.
         self.end_to_start = None  # T_ifs
@@ -356,7 +357,7 @@ class Packet:
                 self.payloadLength = parseLittleEndian(packetList[PAYLOAD_LEN_POS:PAYLOAD_LEN_POS + 2])
 
             self.packetList = packetList
-            self.readPayload(packetList)
+            self.readPayload(packetList, file_type)
 
         except Exceptions.InvalidPacketException as e:
             logging.error("Invalid packet: %s" % str(e))
@@ -371,7 +372,7 @@ class Packet:
     def __repr__(self):
         return "UART packet, type: "+str(self.id)+", PC: "+str(self.packetCounter)
 
-    def readPayload(self, packetList):
+    def readPayload(self, packetList, file_type):
         global test_log
         global test_tifs_log
 
@@ -401,21 +402,27 @@ class Packet:
                         if test_log:
                             test_log.write(f'Packet counter: {self.packetCounter}\n')
                             test_log.write(f'Timestamp: {self.timestamp} us\n')
+
                     if self.is_parser:
                         if self.packet_reader:
-                            if self.packet_reader.lastReceivedTimestampPacket:
-                                last_packet_timestamp = self.packet_reader.lastReceivedTimestampPacket.timestamp
-                                start_to_start = self.timestamp - last_packet_timestamp
-
-                                last_packet_time = self.packet_reader.getPacketTime(self)
-                                self.end_to_start = start_to_start - last_packet_time
+                            if file_type == 1:
+                                self.end_to_start = self.timestamp
                                 if test_log:
-                                    test_log.write(f'[Packet time (start to end): {last_packet_time} us\n')
                                     test_log.write(f'[Delta time (end to start): {self.end_to_start} us\n')
-                                    test_log.write(f'[Delta time (start to start): {start_to_start} us\n')
+                            else:
+                                if self.packet_reader.lastReceivedTimestampPacket:
+                                    last_packet_timestamp = self.packet_reader.lastReceivedTimestampPacket.timestamp
+                                    start_to_start = self.timestamp - last_packet_timestamp
 
-                                if self.end_to_start <= 148 or self.end_to_start <= 152:
-                                    pass
+                                    last_packet_time = self.packet_reader.getPacketTime(self)
+                                    self.end_to_start = start_to_start - last_packet_time
+                                    if test_log:
+                                        test_log.write(f'[Packet time (start to end): {last_packet_time} us\n')
+                                        test_log.write(f'[Delta time (end to start): {self.end_to_start} us\n')
+                                        test_log.write(f'[Delta time (start to start): {start_to_start} us\n')
+
+                            if 148 <= self.end_to_start <= 152:
+                                pass
                         else:
                             if test_log:
                                 test_log.write(f'packet_reader is None.\n')
@@ -452,8 +459,9 @@ class Packet:
                                            if self.id == EVENT_PACKET_ADV_PDU else
                                            PACKET_TYPE_DATA)
                         else:
+                            address = packetList[BLEPACKET_POS : BLEPACKET_POS + 4]
                             packet_type = (PACKET_TYPE_ADVERTISING
-                                           if packetList[BLEPACKET_POS : BLEPACKET_POS + 4] == ADV_ACCESS_ADDRESS else
+                                           if address == ADV_ACCESS_ADDRESS else
                                            PACKET_TYPE_DATA)
                         if self.is_parser:
                             types = ['PACKET_TYPE_UNKNOWN', 'PACKET_TYPE_ADVERTISING', 'PACKET_TYPE_DATA']
