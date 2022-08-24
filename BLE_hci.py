@@ -250,9 +250,12 @@ class BLE_hci:
         payload = self.port.read(size=packet_len)
 
         # Print the packet
-        if (print_evt):
-            for i in range(0, packet_len):
-                status_string += '%02X' % payload[i]
+        if print_evt:
+            try:
+                for i in range(0, packet_len):
+                    status_string += '%02X' % payload[i]
+            except IndexError:
+                print(f'i: {i}, packet_len: {packet_len}')
             print(str(datetime.datetime.now()) + " <", status_string)
 
         return status_string
@@ -920,7 +923,7 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-def internal_cmd(board: int, cmd: str):
+def run_cmd(board: int, cmd: str):
     """directly send command to selected board
 
         Args:
@@ -952,6 +955,45 @@ def internal_cmd(board: int, cmd: str):
 
             # Return error
             sys.exit(int("{0}".format(err)))
+
+
+def auto_test1():
+    """BLE auto testing 1
+
+        set the board address
+        board 0 starts to advertise and wait for connection
+        board 1 connects to board 0
+    """
+    # Set board 0 address
+    board = 0
+    cmd = f'addr {board_addrs[0]}'
+    run_cmd(board, cmd)
+    sleep(1)
+
+    # board 0 starts to advertise
+    board = 0
+    timeout = 60
+    cmd = f'adv -l {timeout}'
+    thd = threading.Thread(target=run_cmd, args=(board, cmd))
+    thd.start()
+
+    sleep(5)
+
+    # Set board 1 address
+    board = 1
+    cmd = f'addr {board_addrs[1]}'
+    run_cmd(board, cmd)
+    sleep(1)
+
+    # Board 1 starts to connect
+    board = 1
+    cmd = f'init -l 30 -s {board_addrs[0]}'
+    run_cmd(board, cmd)
+
+    print(str(datetime.datetime.now()) + " > ", "board 1 finished.")
+    thd.join()
+
+    print(str(datetime.datetime.now()) + " > ", "board 2 finished.")
 
 
 if __name__ == '__main__':
@@ -1180,31 +1222,6 @@ if __name__ == '__main__':
         help_parser.set_defaults(func=helpFunc)
 
     # Start the BLE auto testing
-
-    board = 0
-    cmd = f'addr {board_addrs[0]}'
-    internal_cmd(board, cmd)
-    sleep(1)
-
-    board = 0
-    timeout = 5    # secs
-    cmd = f'adv -l {timeout}'
-    internal_cmd(board, cmd)
-    sleep(1)
-
-    board = 1
-    cmd = f'addr {board_addrs[1]}'
-    internal_cmd(board, cmd)
-    sleep(1)
-
-    board = 1
-    timeout = 5    # secs
-    cmd = f'adv -l {timeout}'
-    internal_cmd(board, cmd)
-    sleep(1)
-
-    board = 1
-    cmd = f'init -l 60 -s {board_addrs[0]}'
-    internal_cmd(board, cmd)
+    auto_test1()
 
     print("\n--- DONE ---")
