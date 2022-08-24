@@ -48,11 +48,17 @@ from time import sleep
 import datetime
 import threading
 
+ble_hci = [None] * 2
+terminal = [None] * 2
+
 # Setup the default serial port settings
 defaultBaud = 115200
-# defaultSP = "/dev/ttyUSB0"
-# defaultSP = "COM9"  # DevKit 1
-defaultSP = "COM10"  # DevKit 2
+defaultSP = "/dev/ttyUSB0"
+
+serial_ports = [
+    "COM9",     # board 1
+    "COM10"     # board 2
+]
 
 # Setup the default Bluetooth settings
 defaultAdvInterval = "0x60"
@@ -63,6 +69,11 @@ defaultSupTimeout = "0x64"  # 1 s
 
 defaultDevAddr = "00:11:22:33:44:55"
 defaultInitAddr = defaultDevAddr
+
+board_addrs = [
+    "00:11:22:33:44:11",    # Board 1 will start first to advertise.
+    "00:11:22:33:44:12"     # Board 2 will connect to board 1.
+]
 
 # Magic value for the exit function to properly return
 exitFuncMagic = 999
@@ -137,13 +148,15 @@ class BLE_hci:
     port = serial.Serial()
     serialPort = ""
 
-    def __init__(self, args):
+    def __init__(self, args, board_id=0, serial_ports=None):
+        self.board_id = board_id
+        self.serial_ports = serial_ports
 
         try:
             # Open serial port
-            serialPort = args.serialPort
+            self.serialPort = self.serial_ports[self.board_id]
             self.port = serial.Serial(
-                port=str(serialPort),
+                port=str(self.serialPort),
                 baudrate=args.baud,
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
@@ -907,8 +920,41 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-if __name__ == '__main__':
+def internal_cmd(board: int, cmd: str):
+    """directly send command to selected board
 
+        Args:
+            board: 0 or 1
+            cmd: the command string
+
+        Returns:
+            None
+    """
+    global terminal
+
+    print("")
+    print(f'internal command to board {board}, cmd: {cmd}')
+
+    try:
+        # Parse the input and execute the appropriate function
+        args = terminal[0].parse_args(cmd.split())
+        try:
+            args.func(args)
+        except AttributeError:
+            pass
+
+    # Catch SystemExit, allows user to ctrl-c to quit the current command
+    except SystemExit as err:
+        if "{0}".format(err) != "0":
+            # Catch the magic exit value, return 0
+            if "{0}".format(err) == str(exitFuncMagic):
+                sys.exit(0)
+
+            # Return error
+            sys.exit(int("{0}".format(err)))
+
+
+if __name__ == '__main__':
     # Setup the signal handler to catch the ctrl-C
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -933,243 +979,232 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
     serialPort = args.serialPort
+
     print("Bluetooth Low Energy HCI tool")
     print("Serial port: " + serialPort)
     print("8N1 " + str(args.baud))
-    if (args.command != ""):
+
+    print("")
+    print("!!! ---------------------------- !!!")
+    print("FOR BLE AUTO TESTING ONLY")
+    print("!!! ---------------------------- !!!")
+    print("")
+
+    if args.command != "":
         print("running commands: " + args.command)
     print("")
 
-    # Create the BLE_hci object
-    ble_hci = BLE_hci(args)
+    for i in range(2):
+        # Create the BLE_hci object
+        ble_hci[i] = BLE_hci(args, board_id=i, serial_ports=serial_ports)
 
-    # Start the terminal argparse
-    terminal = argparse.ArgumentParser(prog="", add_help=True)
-    subparsers = terminal.add_subparsers()
+        # Start the terminal argparse
+        terminal[i] = argparse.ArgumentParser(prog="", add_help=True)
+        subparsers = terminal[i].add_subparsers()
 
-    addr_parser = subparsers.add_parser('addr', help="Set the device address")
-    addr_parser.add_argument('addr',
-                             help="Set the device address, ex: 00:11:22:33:44:55 ")
-    addr_parser.set_defaults(func=ble_hci.addrFunc)
+        # cmd: addr
+        addr_parser = subparsers.add_parser('addr', help="Set the device address")
+        addr_parser.add_argument('addr',
+                                 help="Set the device address, ex: 00:11:22:33:44:55 ")
+        addr_parser.set_defaults(func=ble_hci[i].addrFunc)
 
-    adv_parser = subparsers.add_parser('adv', help="Send the advertising commands",
-                                       formatter_class=RawTextHelpFormatter)
-    adv_parser.add_argument('-i', '--interval', default=str(defaultAdvInterval),
-                            help="Advertising interval in units of 0.625 ms, 16-bit hex number 0x0020 - 0x4000, default: " + str(
-                                defaultAdvInterval))
-    adv_parser.add_argument('-c', '--connect', default="True", help="Advertise as a connectable device, default: True")
-    adv_parser.add_argument('-l', '--listen', default="False",
-                            help="Listen for events \n\t\"True\" for indefinitely, ctrl-c to exit \n\t\"False\" to return \n\tnumber of seconds")
-    adv_parser.add_argument('-s', '--stats', action='store_true',
-                            help="Periodically print the connection stats if listening")
-    adv_parser.add_argument('-m', '--maintain', action='store_true',
-                            help="Setup an event listener to restart advertising if we disconnect")
-    adv_parser.set_defaults(func=ble_hci.advFunc)
-
-    scan_parser = subparsers.add_parser('scan',
-                                        help="Send the scanning commands and print scan reports. ctrl-c to exit")
-    scan_parser.add_argument('-i', '--interval', default=str(defaultAdvInterval),
-                             help="Advertising interval in units of 0.625 ms, 16-bit hex number 0x0020 - 0x4000, default: " + str(
-                                 defaultAdvInterval))
-    scan_parser.set_defaults(func=ble_hci.scanFunc)
-
-    init_parser = subparsers.add_parser('init', help="Send the initiating commands to open a connection",
-                                        formatter_class=RawTextHelpFormatter)
-    init_parser.add_argument('addr', help="Address of peer to connect with, ex: 00:11:22:33:44:55 ")
-    init_parser.add_argument('-i', '--interval', default=str(defaultConnInterval),
-                             help="Connection interval in units of 1.25 ms, 16-bit hex number 0x0006 - 0x0C80, default: " + str(
-                                 defaultConnInterval))
-    init_parser.add_argument('-t', '--timeout', default=str(defaultSupTimeout),
-                             help="Supervision timeout in units of 10 ms, 16-bit hex number 0x000A - 0x0C80, default: " + str(
-                                 defaultSupTimeout))
-    init_parser.add_argument('-l', '--listen', default="False",
-                             help="Listen for events \n\t\"True\" for indefinitely, ctrl-c to exit \n\t\"False\" to return \n\tnumber of seconds")
-    init_parser.add_argument('-s', '--stats', action='store_true',
-                             help="Periodically print the connection stats if listening")
-    init_parser.add_argument('-m', '--maintain', action='store_true',
-                             help="Setup an event listener to restart the connection if we disconnect")
-    init_parser.set_defaults(func=ble_hci.initFunc)
-
-    dataLen_parser = subparsers.add_parser('dataLen', help="Set the max data length",
+        # cmd: adv
+        adv_parser = subparsers.add_parser('adv', help="Send the advertising commands",
                                            formatter_class=RawTextHelpFormatter)
-    dataLen_parser.set_defaults(func=ble_hci.dataLenFunc)
+        adv_parser.add_argument('-i', '--interval', default=str(defaultAdvInterval),
+                                help="Advertising interval in units of 0.625 ms, 16-bit hex number 0x0020 - 0x4000, default: " + str(
+                                    defaultAdvInterval))
+        adv_parser.add_argument('-c', '--connect', default="True", help="Advertise as a connectable device, default: True")
+        adv_parser.add_argument('-l', '--listen', default="False",
+                                help="Listen for events \n\t\"True\" for indefinitely, ctrl-c to exit \n\t\"False\" to return \n\tnumber of seconds")
+        adv_parser.add_argument('-s', '--stats', action='store_true',
+                                help="Periodically print the connection stats if listening")
+        adv_parser.add_argument('-m', '--maintain', action='store_true',
+                                help="Setup an event listener to restart advertising if we disconnect")
+        adv_parser.set_defaults(func=ble_hci[i].advFunc)
 
-    sendAcl_parser = subparsers.add_parser('sendAcl', help="Send ACL packets", formatter_class=RawTextHelpFormatter)
-    sendAcl_parser.add_argument('packetLen',
-                                help="Number of bytes per ACL packet, 16-bit decimal ex: 128, 0 to disable")
-    sendAcl_parser.add_argument('numPackets',
-                                help="Number of packets to send, 8-bit decimal ex: 255, 0 to enable auto-generate ")
-    sendAcl_parser.set_defaults(func=ble_hci.sendAclFunc)
+        # cmd: scan
+        scan_parser = subparsers.add_parser('scan',
+                                            help="Send the scanning commands and print scan reports. ctrl-c to exit")
+        scan_parser.add_argument('-i', '--interval', default=str(defaultAdvInterval),
+                                 help="Advertising interval in units of 0.625 ms, 16-bit hex number 0x0020 - 0x4000, default: " + str(
+                                     defaultAdvInterval))
+        scan_parser.set_defaults(func=ble_hci[i].scanFunc)
 
-    sinkAcl_parser = subparsers.add_parser('sinkAcl', help="Sink ACL packets, do not send events to host",
+        init_parser = subparsers.add_parser('init', help="Send the initiating commands to open a connection",
+                                            formatter_class=RawTextHelpFormatter)
+        init_parser.add_argument('addr', help="Address of peer to connect with, ex: 00:11:22:33:44:55 ")
+        init_parser.add_argument('-i', '--interval', default=str(defaultConnInterval),
+                                 help="Connection interval in units of 1.25 ms, 16-bit hex number 0x0006 - 0x0C80, default: " + str(
+                                     defaultConnInterval))
+        init_parser.add_argument('-t', '--timeout', default=str(defaultSupTimeout),
+                                 help="Supervision timeout in units of 10 ms, 16-bit hex number 0x000A - 0x0C80, default: " + str(
+                                     defaultSupTimeout))
+        init_parser.add_argument('-l', '--listen', default="False",
+                                 help="Listen for events \n\t\"True\" for indefinitely, ctrl-c to exit \n\t\"False\" to return \n\tnumber of seconds")
+        init_parser.add_argument('-s', '--stats', action='store_true',
+                                 help="Periodically print the connection stats if listening")
+        init_parser.add_argument('-m', '--maintain', action='store_true',
+                                 help="Setup an event listener to restart the connection if we disconnect")
+        init_parser.set_defaults(func=ble_hci[i].initFunc)
+
+        dataLen_parser = subparsers.add_parser('dataLen', help="Set the max data length",
+                                               formatter_class=RawTextHelpFormatter)
+        dataLen_parser.set_defaults(func=ble_hci[i].dataLenFunc)
+
+        sendAcl_parser = subparsers.add_parser('sendAcl', help="Send ACL packets", formatter_class=RawTextHelpFormatter)
+        sendAcl_parser.add_argument('packetLen',
+                                    help="Number of bytes per ACL packet, 16-bit decimal ex: 128, 0 to disable")
+        sendAcl_parser.add_argument('numPackets',
+                                    help="Number of packets to send, 8-bit decimal ex: 255, 0 to enable auto-generate ")
+        sendAcl_parser.set_defaults(func=ble_hci[i].sendAclFunc)
+
+        sinkAcl_parser = subparsers.add_parser('sinkAcl', help="Sink ACL packets, do not send events to host",
+                                               formatter_class=RawTextHelpFormatter)
+        sinkAcl_parser.set_defaults(func=ble_hci[i].sinkAclFunc)
+
+        connStats_parser = subparsers.add_parser('connStats', help="Get the connection stats",
+                                                 formatter_class=RawTextHelpFormatter)
+        connStats_parser.set_defaults(func=ble_hci[i].connStatsFunc)
+
+        phy_parser = subparsers.add_parser('phy', help="Update the PHY in the active connection",
                                            formatter_class=RawTextHelpFormatter)
-    sinkAcl_parser.set_defaults(func=ble_hci.sinkAclFunc)
-
-    connStats_parser = subparsers.add_parser('connStats', help="Get the connection stats",
-                                             formatter_class=RawTextHelpFormatter)
-    connStats_parser.set_defaults(func=ble_hci.connStatsFunc)
-
-    phy_parser = subparsers.add_parser('phy', help="Update the PHY in the active connection",
-                                       formatter_class=RawTextHelpFormatter)
-    phy_parser.add_argument('phy', help=
-    """
-    Desired PHY
-    1: 1M
-    2: 2M
-    3: S8 
-    4: S2
-    default: 1M
-    """)
-    phy_parser.set_defaults(func=ble_hci.phyFunc)
-
-    reset_parser = subparsers.add_parser('reset', help="Sends a HCI reset command")
-    reset_parser.set_defaults(func=ble_hci.resetFunc)
-
-    listen_parser = subparsers.add_parser('listen', help="Listen for HCI events, print to screen")
-    listen_parser.add_argument('-t', '--time', default="0", help="Time to listen in seconds, default: 0(indef)")
-    listen_parser.add_argument('-s', '--stats', action='store_true',
-                               help="Periodically print the connection stats if listening")
-    listen_parser.set_defaults(func=ble_hci.listenFunc)
-
-    txTest_parser = subparsers.add_parser('txTest', aliases=['tx'], help="Execute the transmitter test",
-                                          formatter_class=RawTextHelpFormatter)
-    txTest_parser.add_argument('-c', '--channel', default="0", help="TX test channel, 0-39, default: 0")
-    txTest_parser.add_argument('--phy', default="1", help=
-    """TX test PHY
+        phy_parser.add_argument('phy', help=
+        """
+        Desired PHY
         1: 1M
         2: 2M
         3: S8 
         4: S2
         default: 1M
-    """)
-    txTest_parser.add_argument('-p', '--payload', default="0", help=
-    """TX test Payload
-        0: PRBS9
-        1: 11110000
-        2: 10101010
-        3: PRBS15
-        4: 11111111
-        5: 00000000
-        6: 00001111
-        7: 01010101
-        default: PRBS9
-    """)
-    txTest_parser.add_argument('-pl', '--packetLength', default="0", help=
-    """"TX packet length, number of bytes per packet, 0-255
-        default: 0
-    """)
-    txTest_parser.set_defaults(func=ble_hci.txTestFunc)
+        """)
+        phy_parser.set_defaults(func=ble_hci[i].phyFunc)
 
-    rxTest_parser = subparsers.add_parser('rxTest', aliases=['rx'], help="Execute the receiver test")
-    rxTest_parser.add_argument('-c', '--channel', default="0", help="RX test channel, 0-39, default: 0")
-    rxTest_parser.add_argument('--phy', default="1", help=
-    """RX test PHY
-        1: 1M
-        2: 2M
-        3: S8 
-        4: S2
-        default: 1M
-    """)
-    rxTest_parser.set_defaults(func=ble_hci.rxTestFunc)
+        reset_parser = subparsers.add_parser('reset', help="Sends a HCI reset command")
+        reset_parser.set_defaults(func=ble_hci[i].resetFunc)
 
-    endTest_parser = subparsers.add_parser('endTest', aliases=['end'],
-                                           help="End the TX/RX test, print the number of correctly received packets")
-    endTest_parser.set_defaults(func=ble_hci.endTestFunc)
+        listen_parser = subparsers.add_parser('listen', help="Listen for HCI events, print to screen")
+        listen_parser.add_argument('-t', '--time', default="0", help="Time to listen in seconds, default: 0(indef)")
+        listen_parser.add_argument('-s', '--stats', action='store_true',
+                                   help="Periodically print the connection stats if listening")
+        listen_parser.set_defaults(func=ble_hci[i].listenFunc)
 
-    txPower_parser = subparsers.add_parser('txPower', aliases=['txp'], help="Set the TX power",
-                                           formatter_class=RawTextHelpFormatter)
-    txPower_parser.add_argument('power', help="""Integer power setting in units of dBm""")
-    txPower_parser.add_argument('--handle', help="Connection handle, integer")
-    txPower_parser.set_defaults(func=ble_hci.txPowerFunc)
+        txTest_parser = subparsers.add_parser('txTest', aliases=['tx'], help="Execute the transmitter test",
+                                              formatter_class=RawTextHelpFormatter)
+        txTest_parser.add_argument('-c', '--channel', default="0", help="TX test channel, 0-39, default: 0")
+        txTest_parser.add_argument('--phy', default="1", help=
+        """TX test PHY
+            1: 1M
+            2: 2M
+            3: S8 
+            4: S2
+            default: 1M
+        """)
+        txTest_parser.add_argument('-p', '--payload', default="0", help=
+        """TX test Payload
+            0: PRBS9
+            1: 11110000
+            2: 10101010
+            3: PRBS15
+            4: 11111111
+            5: 00000000
+            6: 00001111
+            7: 01010101
+            default: PRBS9
+        """)
+        txTest_parser.add_argument('-pl', '--packetLength', default="0", help=
+        """"TX packet length, number of bytes per packet, 0-255
+            default: 0
+        """)
+        txTest_parser.set_defaults(func=ble_hci[i].txTestFunc)
 
-    discon_parser = subparsers.add_parser('discon', aliases=['dc'],
-                                          help="Send the command to disconnect")
-    discon_parser.set_defaults(func=ble_hci.disconFunc)
+        rxTest_parser = subparsers.add_parser('rxTest', aliases=['rx'], help="Execute the receiver test")
+        rxTest_parser.add_argument('-c', '--channel', default="0", help="RX test channel, 0-39, default: 0")
+        rxTest_parser.add_argument('--phy', default="1", help=
+        """RX test PHY
+            1: 1M
+            2: 2M
+            3: S8 
+            4: S2
+            default: 1M
+        """)
+        rxTest_parser.set_defaults(func=ble_hci[i].rxTestFunc)
 
-    setChMap_parser = subparsers.add_parser('setChMap', formatter_class=RawTextHelpFormatter,
-                                            help="""Set the connection channel map to a given channel.""")
-    setChMap_parser.add_argument('chan', help="""Channel to use in channel map
-    Will set the channel map to the given channel, plus one additional channel.""", nargs="?")
-    setChMap_parser.add_argument('-m', '--mask', help="""40 bit hex number to use a channel map
-    0xFFFFFFFFFF will use all channels, 0x000000000F will use channels 0-3""")
-    setChMap_parser.add_argument('--handle', help="Connection handle, integer", default="0")
-    setChMap_parser.set_defaults(func=ble_hci.setChMapFunc)
+        endTest_parser = subparsers.add_parser('endTest', aliases=['end'],
+                                               help="End the TX/RX test, print the number of correctly received packets")
+        endTest_parser.set_defaults(func=ble_hci[i].endTestFunc)
 
-    cmd_parser = subparsers.add_parser('cmd', formatter_class=RawTextHelpFormatter,
-                                       help="Send raw HCI commands")
-    cmd_parser.add_argument('cmd', help="String of hex bytes LSB first\nex: \"01030C00\" to send HCI Reset command")
-    cmd_parser.add_argument('-l', '--listen', action='store_true',
-                            help="Listen for events indefinitely, ctrl-c to exit")
-    cmd_parser.set_defaults(func=ble_hci.cmdFunc)
+        txPower_parser = subparsers.add_parser('txPower', aliases=['txp'], help="Set the TX power",
+                                               formatter_class=RawTextHelpFormatter)
+        txPower_parser.add_argument('power', help="""Integer power setting in units of dBm""")
+        txPower_parser.add_argument('--handle', help="Connection handle, integer")
+        txPower_parser.set_defaults(func=ble_hci[i].txPowerFunc)
 
-    readReg_parser = subparsers.add_parser('readReg', formatter_class=RawTextHelpFormatter,
-                                           help="Read register, device performs a memcpy from address and returns the value")
-    readReg_parser.add_argument('addr', help="Address to read, 32-bit hex value\nex: \"0x20000000\"")
-    readReg_parser.add_argument('length', help="Number of bytes to read, hex value\nex: \"0x2\"")
-    readReg_parser.set_defaults(func=ble_hci.readRegFunc)
+        discon_parser = subparsers.add_parser('discon', aliases=['dc'],
+                                              help="Send the command to disconnect")
+        discon_parser.set_defaults(func=ble_hci[i].disconFunc)
 
-    readWrite_parser = subparsers.add_parser('writeReg', formatter_class=RawTextHelpFormatter,
-                                             help="Write register, device performs a memcpy to memory address")
-    readWrite_parser.add_argument('addr', help="Address to write, 32-bit hex value\nex: \"0x20000000\"")
-    readWrite_parser.add_argument('value', help="Data to write, 8,16, or 32 bit hex value,\nex: \"0x12\"")
-    readWrite_parser.set_defaults(func=ble_hci.writeRegFunc)
+        setChMap_parser = subparsers.add_parser('setChMap', formatter_class=RawTextHelpFormatter,
+                                                help="""Set the connection channel map to a given channel.""")
+        setChMap_parser.add_argument('chan', help="""Channel to use in channel map
+        Will set the channel map to the given channel, plus one additional channel.""", nargs="?")
+        setChMap_parser.add_argument('-m', '--mask', help="""40 bit hex number to use a channel map
+        0xFFFFFFFFFF will use all channels, 0x000000000F will use channels 0-3""")
+        setChMap_parser.add_argument('--handle', help="Connection handle, integer", default="0")
+        setChMap_parser.set_defaults(func=ble_hci[i].setChMapFunc)
 
-    # Exit function defined above
-    exit_parser = subparsers.add_parser('exit', aliases=['quit'], help="Exit the program")
-    exit_parser.set_defaults(func=ble_hci.exitFunc)
+        cmd_parser = subparsers.add_parser('cmd', formatter_class=RawTextHelpFormatter,
+                                           help="Send raw HCI commands")
+        cmd_parser.add_argument('cmd', help="String of hex bytes LSB first\nex: \"01030C00\" to send HCI Reset command")
+        cmd_parser.add_argument('-l', '--listen', action='store_true',
+                                help="Listen for events indefinitely, ctrl-c to exit")
+        cmd_parser.set_defaults(func=ble_hci[i].cmdFunc)
 
-    help_parser = subparsers.add_parser('help', aliases=['h'], help="Show help message")
-    help_parser.set_defaults(func=helpFunc)
+        readReg_parser = subparsers.add_parser('readReg', formatter_class=RawTextHelpFormatter,
+                                               help="Read register, device performs a memcpy from address and returns the value")
+        readReg_parser.add_argument('addr', help="Address to read, 32-bit hex value\nex: \"0x20000000\"")
+        readReg_parser.add_argument('length', help="Number of bytes to read, hex value\nex: \"0x2\"")
+        readReg_parser.set_defaults(func=ble_hci[i].readRegFunc)
 
-    # Parse the command input and execute the appropriate function
-    if (args.command != ""):
-        commands = args.command.split(";")
-        for i in range(0, len(commands)):
-            # Remove leading and trailing white space
-            command = commands[i].strip()
+        readWrite_parser = subparsers.add_parser('writeReg', formatter_class=RawTextHelpFormatter,
+                                                 help="Write register, device performs a memcpy to memory address")
+        readWrite_parser.add_argument('addr', help="Address to write, 32-bit hex value\nex: \"0x20000000\"")
+        readWrite_parser.add_argument('value', help="Data to write, 8,16, or 32 bit hex value,\nex: \"0x12\"")
+        readWrite_parser.set_defaults(func=ble_hci[i].writeRegFunc)
 
-            # Split the command into its arguments
-            command = command.split()
+        # Exit function defined above
+        exit_parser = subparsers.add_parser('exit', aliases=['quit'], help="Exit the program")
+        exit_parser.set_defaults(func=ble_hci[i].exitFunc)
 
-            # Run the commands
-            try:
-                args = terminal.parse_args(command)
-                args.func(args)
-            except AttributeError:
-                continue
+        help_parser = subparsers.add_parser('help', aliases=['h'], help="Show help message")
+        help_parser.set_defaults(func=helpFunc)
 
-            # Catch SystemExit, allows user to ctrl-c to quit the current command
-            except SystemExit as err:
-                if ("{0}".format(err) != "0"):
-                    # Catch the magic exit value, return 0
-                    if ("{0}".format(err) == str(exitFuncMagic)):
-                        sys.exit(0)
+    # Start the BLE auto testing
 
-                    # Return error
-                    sys.exit(int("{0}".format(err)))
+    board = 0
+    cmd = f'addr {board_addrs[0]}'
+    internal_cmd(board, cmd)
+    sleep(1)
 
-                # Continue if we get a different code
+    board = 0
+    timeout = 5    # secs
+    cmd = f'adv -l {timeout}'
+    internal_cmd(board, cmd)
+    sleep(1)
 
-    # Start the terminal
-    while True:
-        # Get the terminal input
-        astr = input('>>> ')
-        try:
-            # Parse the input and execute the appropriate function
-            args = terminal.parse_args(astr.split())
-            try:
-                args.func(args)
-            except AttributeError:
-                continue
+    board = 1
+    cmd = f'addr {board_addrs[1]}'
+    internal_cmd(board, cmd)
+    sleep(1)
 
-        # Catch SystemExit, allows user to ctrl-c to quit the current command
-        except SystemExit as err:
-            if ("{0}".format(err) != "0"):
-                # Catch the magic exit value, return 0
-                if ("{0}".format(err) == str(exitFuncMagic)):
-                    sys.exit(0)
+    board = 1
+    timeout = 5    # secs
+    cmd = f'adv -l {timeout}'
+    internal_cmd(board, cmd)
+    sleep(1)
 
-                # Return error
-                sys.exit(int("{0}".format(err)))
+    board = 1
+    cmd = f'init -l 60 -s {board_addrs[0]}'
+    internal_cmd(board, cmd)
 
-            # Continue if we get a different code
+    print("\n--- DONE ---")
