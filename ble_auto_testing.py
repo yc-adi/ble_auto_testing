@@ -50,16 +50,23 @@ addrs = [
     "00:11:22:33:44:12"  # board 1
 ]
 
+test_time = 60  # secs
 
-def control_board(cmd: str) -> list:
+def control_board(sleep_secs: int, cmd: str) -> list:
     """Send hci commands to the board through the selected serial port
 
         Args:
+            sleep_secs: time to sleep in secs
             cmd: the hci commands
 
         Returns:
             [thread1, thread2]
     """
+    if sleep_secs > 0:
+        print(f'{datetime.now()}: start to sleep')
+        time.sleep(sleep_secs)
+        print(f'{datetime.now()}: end sleeping')
+
     full_cmd = f'python -m BLE_hci {cmd}'
     print(full_cmd)
     with Popen(full_cmd, stdout=PIPE, bufsize=1, universal_newlines=True, shell=True) as p:
@@ -76,20 +83,22 @@ def run_ble_app():
 
     """
     board = 0
-    timeout = 30
+    timeout = test_time
     cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};adv_-l_{timeout};exit'
 
-    thd1 = Thread(target=control_board, args=(cmd,))
+    thd1 = Thread(target=control_board, args=(0, cmd,))
     thd1.start()
 
     time.sleep(5)
 
     board = 1
-    timeout = 25
-    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_{addrs[0]};exit'
-    thd2 = Thread(target=control_board, args=(cmd,))
+    delay = 8   # secs
+    timeout = test_time - 5 - delay
+    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_-s_{addrs[0]};exit'
+    thd2 = Thread(target=control_board, args=(delay, cmd,))
     thd2.start()
-    time.sleep(5)
+
+    time.sleep(1)
 
     return thd1, thd2
 
@@ -103,9 +112,9 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
             --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT --auto-test --timeout 10
 
         With a selected device advertisings address
-        --capture --extcap-interface COM4-None --device Periph --fifo FIFO
+        --capture --extcap-interface COM4-None --fifo FIFO
             --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT
-            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 10
+            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20
 
         No device selected:
         --capture --extcap-interface COM4-None --fifo FIFO --extcap-control-out EXTCAP_CONTROL_OUT
@@ -123,7 +132,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     """
     if device_name == "":
         cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO ' \
-              f'--extcap-control-out EXTCAP_CONTROL_OUT ' \
+              f'--extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT ' \
               f'--dev-addr {dev_adv_addr} --auto-test --timeout {timeout}'
     else:
         cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO '\
@@ -206,7 +215,7 @@ if __name__ == "__main__":
     interface = "COM4-None"
     device = ""
     dev_adv_addr = addrs[0]
-    timeout = 150   # secs
+    timeout = test_time   # secs
     res = run_sniffer(interface, device, dev_adv_addr, timeout)
     pcap_file = res["pcap_file_name"]
     print(f'Parse file: {pcap_file}')

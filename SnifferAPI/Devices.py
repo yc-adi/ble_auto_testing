@@ -123,7 +123,7 @@ class DeviceList(Notifications.Notifier):
 
             device.followed = True
 
-        device.followed = True  # for auto_test  # remove me !!!
+        device.followed = True  # TODO: verify the logic of this whole function.
         self.notify("DEVICE_FOLLOWED", device)
 
     def asList(self):

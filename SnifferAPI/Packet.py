@@ -491,19 +491,27 @@ class Packet:
                         if self.packet_reader is not None \
                                 and self.packet_reader.last_ble_packet is not None \
                                 and self.blePacket is not None:
-                            cases = [
-                                # self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
-                                self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
-                            ]
-                            if any(cases):
-                                test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
-                                test_tifs_log.write(
-                                    f'Last: {PDU_Types[self.packet_reader.last_ble_packet.advType]}\n')
-                                test_tifs_log.write(
-                                    f'Curr: {PDU_Types[self.blePacket.advType]}\n')
-                                test_tifs_log.write(f'{self.end_to_start}\n\n')
+                            # With advertising packet and data packet
+                            if packet_type == PACKET_TYPE_DATA:
+                                if not self.direction:      # False: slave to master
+                                    test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
+                                    test_tifs_log.write(f'{self.end_to_start}\n\n')
 
-                                all_tifs.append(self.end_to_start)
+                                    all_tifs.append(self.end_to_start)
+                            else:
+                                cases = [
+                                    # self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
+                                    self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
+                                ]
+                                if any(cases):
+                                    test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
+                                    test_tifs_log.write(
+                                        f'Last: {PDU_Types[self.packet_reader.last_ble_packet.advType]}\n')
+                                    test_tifs_log.write(
+                                        f'Curr: {PDU_Types[self.blePacket.advType]}\n')
+                                    test_tifs_log.write(f'{self.end_to_start}\n\n')
+
+                                    all_tifs.append(self.end_to_start)
 
                         if self.packet_reader is not None:
                             self.packet_reader.last_ble_packet = self.blePacket
