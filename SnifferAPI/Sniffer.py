@@ -157,12 +157,19 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
     def setSupportedProtocolVersion(self, suportedProtocolVersion):
         self._packetReader.setSupportedProtocolVersion(suportedProtocolVersion)
 
-    def get_dev_addr(self, target_dev_name):
+    def get_dev_addr(self, target_dev_name, target_given_addr):
         """Get the target device address from its name
         """
-        for collected_dev in self._devices.devices:
-            if collected_dev.name == '"' + target_dev_name + '"':
-                return collected_dev.address
+        if target_given_addr:
+            tmp = target_given_addr.split(':')
+            given_addr = [int(x, 16) for x in tmp]
+            for collected_dev in self._devices.devices:
+                if collected_dev.address[:6] == given_addr:
+                    return collected_dev.address
+        else:
+            for collected_dev in self._devices.devices:
+                if collected_dev.name == '"' + target_dev_name + '"':
+                    return collected_dev.address
 
         return [0, 0, 0, 0, 0, 0, 0]
 

@@ -31,37 +31,105 @@
 * ownership rights.
 *******************************************************************************/
 """
-
+import subprocess
+from datetime import datetime
 from os.path import exists
 from pcapng_file_parser import parse_pcapng_file, all_tifs
 from subprocess import Popen, PIPE, CalledProcessError
+from threading import Thread
+import time
+
+
+serial_ports = [
+    "COM9",  # board 0
+    "COM10"  # board 1
+]
+
+addrs = [
+    "00:11:22:33:44:11",  # board 0
+    "00:11:22:33:44:12"  # board 1
+]
+
+
+def control_board(cmd: str) -> list:
+    """Send hci commands to the board through the selected serial port
+
+        Args:
+            cmd: the hci commands
+
+        Returns:
+            [thread1, thread2]
+    """
+    full_cmd = f'python -m BLE_hci {cmd}'
+    print(full_cmd)
+    with Popen(full_cmd, stdout=PIPE, bufsize=1, universal_newlines=True, shell=True) as p:
+        for line in p.stdout:
+            print(line)
+
+    if p.returncode != 0:
+        print('Failed.')
+        raise CalledProcessError(p.returncode, p.args)
 
 
 def run_ble_app():
-    """Run the BLE application
+    """Run the BLE application on two DevKit boards
 
     """
-    pass
+    board = 0
+    timeout = 30
+    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};adv_-l_{timeout};exit'
+
+    thd1 = Thread(target=control_board, args=(cmd,))
+    thd1.start()
+
+    time.sleep(5)
+
+    board = 1
+    timeout = 25
+    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_{addrs[0]};exit'
+    thd2 = Thread(target=control_board, args=(cmd,))
+    thd2.start()
+    time.sleep(5)
+
+    return thd1, thd2
 
 
-def run_sniffer(interface_name: str, device_name: str, timeout: int) -> dict:
+def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int) -> dict:
     """Run the BLE packet sniffer on specified interface and device
 
-        Example command: --capture --extcap-interface COM4-None --device Periph --fifo FIFO
+        Example command:
+        With a selected device name
+        --capture --extcap-interface COM4-None --device Periph --fifo FIFO
             --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT --auto-test --timeout 10
+
+        With a selected device advertisings address
+        --capture --extcap-interface COM4-None --device Periph --fifo FIFO
+            --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT
+            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 10
+
+        No device selected:
+        --capture --extcap-interface COM4-None --fifo FIFO --extcap-control-out EXTCAP_CONTROL_OUT
+            --auto-test --timeout 10
 
         Args:
             interface_name: the nRF dongle interface name
             device_name: the BLE device name
+            dev_adv_addr: the device advertising address in the BLE packet
             timeout: how long the sniffer should run
 
         Returns:
             res (dict): sniffer result info are saved in a dictionary
                         keys: 'pcap_file_name'
     """
-    cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO '\
-          f'--extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT '\
-          f'--device {device_name} --auto-test --timeout {timeout}'
+    if device_name == "":
+        cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO ' \
+              f'--extcap-control-out EXTCAP_CONTROL_OUT ' \
+              f'--dev-addr {dev_adv_addr} --auto-test --timeout {timeout}'
+    else:
+        cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO '\
+            f'--extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT '\
+            f'--device {device_name} --auto-test --timeout {timeout}'
+    print(cmd)
 
     # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
     # out, err = p.communicate()
@@ -131,22 +199,28 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str):
 
 
 if __name__ == "__main__":
-    # TODO: develop serial port control to run the application on BLE devices
-    run_ble_app()
+    # Run the BLE5_ctr on two DevKit boards. Get the control thread for each board.
+    thd1, thd2 = run_ble_app()
+    print(f'{datetime.now()}: Test started. Run sniffer.')
 
-    # TODO: set/get the interface and device names
     interface = "COM4-None"
-    device = "Periph"
-    timeout = 60  # secs
-    res = run_sniffer(interface, device, timeout)
+    device = ""
+    dev_adv_addr = addrs[0]
+    timeout = 150   # secs
+    res = run_sniffer(interface, device, dev_adv_addr, timeout)
     pcap_file = res["pcap_file_name"]
     print(f'Parse file: {pcap_file}')
 
+    # Wait the threads to finish.
+    thd1.join()
+    thd2.join()
+
+    # Parse the saved file.
     if exists(pcap_file):
+        # Need to convert pcap file to pcapng format.
         pcapng_file = pcap_file.replace(".pcap", ".pcapng")
         convert_pcap_to_pcapng(pcap_file, pcapng_file)
 
+        # Parse the results.
         file_type = 1
         run_parser(file_type, pcapng_file)
-
-# TODO: capture the slave PDU

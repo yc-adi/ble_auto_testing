@@ -620,7 +620,7 @@ def teardown_extcap_log_handler():
 
 
 def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_test=False, timeout=120, given_name=None,
-                    target_device=None):
+                    target_device=None, target_given_addr=None):
     """Start the sniffer to capture packets"""
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
@@ -667,7 +667,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             if auto_test:
                 # Get the target device address
                 time.sleep(5)
-                target_dev_addr = sniffer.get_dev_addr(target_device)
+                target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                 control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
             else:
                 control_read_initial_values(sniffer)
@@ -845,6 +845,7 @@ if __name__ == '__main__':
     # Add for automatic test
     parser.add_argument("--auto-test", help="automatic test, default False", default=False, action='store_true')
     parser.add_argument("--timeout", type=int, help="timeout in secs for automatic test, default 120 secs", default=120)
+    parser.add_argument("--dev-addr", help="device advertising address")
 
     logging.info("Started PID {}".format(os.getpid()))
 
@@ -917,7 +918,7 @@ if __name__ == '__main__':
 
             sniffer_capture(interface, args.baudrate, args.fifo, args.extcap_control_in, args.extcap_control_out,
                             auto_test=args.auto_test, timeout=args.timeout, given_name=given_name,
-                            target_device=args.device)
+                            target_device=args.device, target_given_addr=args.dev_addr)
         except KeyboardInterrupt:
             pass
         except Exception as e:
