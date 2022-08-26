@@ -146,11 +146,11 @@ if __name__ == "__main__":
         min_tifs = min(all_tifs)
         avg = sum(all_tifs) / len(all_tifs)
 
-        #print(f'TIFS, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}')
+        print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}')
         if max_tifs <= 152 and min_tifs >= 148:
-            print("PASS")
+            print("TIFS verification: PASS")
         else:
-            print("FAIL")
+            print("TIFS verification: FAIL")
     else:
         print("No TIFS captured.")
 

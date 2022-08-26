@@ -171,7 +171,7 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
                 if collected_dev.name == '"' + target_dev_name + '"':
                     return collected_dev.address
 
-        return [0, 0, 0, 0, 0, 0, 0]
+        return None
 
     # Gracefully shut down the sniffer threads and connections.
     # If join is True, join the sniffer thread until it quits.

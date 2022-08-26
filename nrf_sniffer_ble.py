@@ -666,8 +666,14 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             # First read initial control values
             if auto_test:
                 # Get the target device address
-                time.sleep(5)
-                target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
+                tried = 0
+                while tried < 15:
+                    time.sleep(1)
+                    target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
+                    if target_dev_addr is not None:
+                        logging.info(f'After tried {tried} times, found the target device address: {target_dev_addr}')
+                        break
+                    tried += 1
                 control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
             else:
                 control_read_initial_values(sniffer)

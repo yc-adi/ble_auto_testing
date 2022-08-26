@@ -78,6 +78,7 @@ class PacketReader(Notifications.Notifier):
         self.is_parser = pcapng_parser
         self.portnum = portnum
         self.last_ble_packet = None
+        self.detected_connection = False
 
         try:
             if self.portnum is not None and baudrate is not None:
@@ -423,9 +424,6 @@ class Packet:
                                         test_log.write(f'[Packet time (start to end): {last_packet_time} us\n')
                                         test_log.write(f'[Delta time (end to start): {self.end_to_start} us\n')
                                         test_log.write(f'[Delta time (start to start): {start_to_start} us\n')
-
-                            if 148 <= self.end_to_start <= 152:
-                                pass
                         else:
                             if test_log:
                                 test_log.write(f'packet_reader is None.\n')
@@ -470,20 +468,20 @@ class Packet:
                             types = ['PACKET_TYPE_UNKNOWN', 'PACKET_TYPE_ADVERTISING', 'PACKET_TYPE_DATA']
                             # print(f'\tpacket_type: {types[packet_type]}')
 
+                        # remove me !!!
+                        if self.packetCounter == 3753:
+                            pass
+
                         # Parse BLE packet
                         self.blePacket = BlePacket(packet_type, packetList[BLEPACKET_POS:], self.phy,
                                                    pcapng_parser=self.is_parser)
 
-                        if 0 and self.end_to_start is not None \
-                                and self.packet_reader.last_ble_packet.advType is not None \
-                                and self.blePacket.advType is not None:
-                            if self.end_to_start <= 148 or self.end_to_start <= 152:
-                                if test_tifs_log:
-                                    test_tifs_log.write(
-                                        f'Last: {PDU_Types[self.packet_reader.last_ble_packet.advType]}\n')
-                                    test_tifs_log.write(
-                                            f'Curr: {PDU_Types[self.blePacket.advType]}\n')
-                                    test_tifs_log.write(f'{self.end_to_start}\n\n')
+                        if self.is_parser:
+                            if self.blePacket.advType == PDU_TYPE_CONNECT_IND and \
+                                    self.packet_reader.last_ble_packet is not None:  # Avoid the 1st packet is CONNECT_IND
+                                self.packet_reader.detected_connection = True
+                            elif packet_type != PACKET_TYPE_DATA:
+                                self.packet_reader.detected_connection = False
 
                         #
                         # Check T_ifs
@@ -492,7 +490,7 @@ class Packet:
                                 and self.packet_reader.last_ble_packet is not None \
                                 and self.blePacket is not None:
                             # With advertising packet and data packet
-                            if packet_type == PACKET_TYPE_DATA:
+                            if packet_type == PACKET_TYPE_DATA and self.packet_reader.detected_connection:
                                 if not self.direction:      # False: slave to master
                                     test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
                                     test_tifs_log.write(f'{self.end_to_start}\n\n')

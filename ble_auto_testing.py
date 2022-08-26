@@ -31,10 +31,13 @@
 * ownership rights.
 *******************************************************************************/
 """
-import subprocess
+
+import argparse
+from argparse import RawTextHelpFormatter
 from datetime import datetime
 from os.path import exists
 from pcapng_file_parser import parse_pcapng_file, all_tifs
+import statistics
 from subprocess import Popen, PIPE, CalledProcessError
 from threading import Thread
 import time
@@ -50,7 +53,8 @@ addrs = [
     "00:11:22:33:44:12"  # board 1
 ]
 
-test_time = 60  # secs
+test_time = 30  # secs
+
 
 def control_board(sleep_secs: int, cmd: str) -> list:
     """Send hci commands to the board through the selected serial port
@@ -94,7 +98,7 @@ def run_ble_app():
     board = 1
     delay = 8   # secs
     timeout = test_time - 5 - delay
-    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_-s_{addrs[0]};exit'
+    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_-s_{addrs[0]};reset;exit'
     thd2 = Thread(target=control_board, args=(delay, cmd,))
     thd2.start()
 
@@ -177,27 +181,29 @@ def run_parser(file_type: int, pcapng_file: str):
         min_tifs = min(all_tifs)
         avg = sum(all_tifs) / len(all_tifs)
 
-        # print(f'TIFS, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}')
+        print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}, '
+              f'median: {statistics.median(all_tifs)}')
         if max_tifs <= 152 and min_tifs >= 148:
-            print("PASS")
+            print("TIFS verification: PASS")
         else:
-            print("FAIL")
+            print("TIFS verification: FAIL")
     else:
         print("No TIFS captured.")
 
 
-def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str):
+def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
     """Convert pcap file to pcapng file
 
-        C:\Program Files\Wireshark\tshark.exe -F pcapng -r {pcap file} -w {pcapng file}
+        "C:\\Program Files\\Wireshark\\tshark.exe" -F pcapng -r {pcap file} -w {pcapng file}
         Args:
             pcap_file: pcap format file name
             pcapng_file: pcapng format file name
+            tshark: the full path of tshark
 
         Returns:
             None
     """
-    cmd = f'"C:\\Program Files\\Wireshark\\tshark.exe" -F pcapng -r {pcap_file} -w {pcapng_file}'
+    cmd = f'{tshark} -F pcapng -r {pcap_file} -w {pcapng_file}'
     with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:
             print(line)
@@ -207,15 +213,55 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str):
         raise CalledProcessError(p.returncode, p.args)
 
 
+def get_args():
+    """Get the program arguments
+        Args:
+            None
+
+        Return:
+            args
+    """
+    # Setup the command line description text
+    desc = """
+    BLE auto testing tool.
+
+    This tool is used to control two DevKit boards to run BLE5_ctr projects at the same time. Meanwhile, the packets
+    between these two BLE devices are sniffed by a nRF51 dongle. The captured packets will be saved to a pcap and a
+    pcapng file, which can be used to analyze the BLE performance. 
+    """
+    parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
+    parser.add_argument('--interface', help='sniffer interface name like "COM4-None", "/dev/ttyUSB???"',
+                        default="COM4-None")
+    parser.add_argument('--device', help='sniffer target device name', default="")
+    parser.add_argument('--brd0-addr', help='DevKit board 0 advertising address', default="00:11:22:33:44:11")
+    parser.add_argument('--brd1-addr', help='DevKit board 1 advertising address', default="00:11:22:33:44:12")
+    parser.add_argument('--sp0', help='BLE hci serial port for board 0', default="COM9")
+    parser.add_argument('--sp1', help='BLE hci serial port for board 1', default="COM10")
+    parser.add_argument('--time', help='test time in seconds', type=int, default=30)
+    parser.add_argument('--tshark', help='tshark program to convert pcap to pcapng', default=
+                        "C:\\Program Files\\Wireshark\\tshark.exe")
+    args = parser.parse_args()
+
+    return args
+
+
 if __name__ == "__main__":
+    args = get_args()
+
     # Run the BLE5_ctr on two DevKit boards. Get the control thread for each board.
     thd1, thd2 = run_ble_app()
     print(f'{datetime.now()}: Test started. Run sniffer.')
 
-    interface = "COM4-None"
-    device = ""
+    interface = args.interface
+    device = args.device
+    addrs[0] = args.brd0_addr
+    addrs[1] = args.brd1_addr
     dev_adv_addr = addrs[0]
-    timeout = test_time   # secs
+    serial_ports[0] = args.sp0
+    serial_ports[1] = args.sp1
+    test_time = args.time
+
+    timeout = test_time + 10   # secs
     res = run_sniffer(interface, device, dev_adv_addr, timeout)
     pcap_file = res["pcap_file_name"]
     print(f'Parse file: {pcap_file}')
@@ -228,7 +274,7 @@ if __name__ == "__main__":
     if exists(pcap_file):
         # Need to convert pcap file to pcapng format.
         pcapng_file = pcap_file.replace(".pcap", ".pcapng")
-        convert_pcap_to_pcapng(pcap_file, pcapng_file)
+        convert_pcap_to_pcapng(pcap_file, pcapng_file, args.tshark)
 
         # Parse the results.
         file_type = 1

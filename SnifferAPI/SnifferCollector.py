@@ -221,10 +221,10 @@ class SnifferCollector(Notifications.Notifier):
                             self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
                         else:
                             self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
-                        logging.info("Firmware version %s" % self._fwversion)
+                        # logging.info("Firmware version %s" % self._fwversion)
                 elif packet.id == RESP_VERSION:
                     self._fwversion = packet.version
-                    logging.info("Firmware version %s" % self._fwversion)
+                    # logging.info("Firmware version %s" % self._fwversion)
                 elif packet.id == RESP_TIMESTAMP:
                     # Use current time as timestamp reference
                     self._last_time = time.time()
