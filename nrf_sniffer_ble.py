@@ -808,7 +808,54 @@ def goodbye():
     logging.info("Exiting PID {}".format(os.getpid()))
 
 
-if __name__ == '__main__':
+def run_sniffer(params: dict):
+    """Run the sniffer with input arguments
+
+        Args:
+            params: the dict from input arguments
+
+        Returns:
+            None
+    """
+    interface = params["extcap_interface"]
+
+    try:
+        logging.info('sniffer capture')
+        if params["auto_test"]:
+            if interface[0] == '/':
+                name = interface[1:].replace("/", "-")
+            name = name + "_" + params["device"] + "_" \
+                   + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
+            # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            base_dir = os.getcwd()
+            given_name = os.path.join(base_dir, "output", name)
+        else:
+            given_name = None
+
+        sniffer_capture(interface, params["baudrate"], params["fifo"], params["extcap_control_in"],
+                        params["extcap_control_out"], auto_test=params["auto_test"],
+                        timeout=params["timeout"], given_name=given_name,
+                        target_device=params["device"], target_given_addr=params["dev_addr"])
+    except KeyboardInterrupt:
+        pass
+    except Exception as e:
+        import traceback
+
+        logging.info(traceback.format_exc())
+        logging.info('internal error: {}'.format(repr(e)))
+        sys.exit(ERROR_INTERNAL)
+
+    if params["auto_test"] and given_name is not None:
+        print(f'pcap file: {given_name}')
+
+    logging.info('main exit PID {}'.format(os.getpid()))
+
+    return given_name
+
+def parse_args():
+    """Parse input arguments
+
+    """
     # Capture options
     parser = argparse.ArgumentParser(description="Nordic Semiconductor nRF Sniffer for Bluetooth LE extcap plugin")
 
@@ -916,38 +963,25 @@ if __name__ == '__main__':
     elif args.extcap_dlts:
         extcap_dlts(interface)
     elif args.capture:
-        if args.fifo is None:
-            parser.print_help()
-            sys.exit(ERROR_FIFO)
-        try:
-            logging.info('sniffer capture')
-            if args.auto_test:
-                if interface[0] == '/':
-                    name = interface[1:].replace("/", "-")
-                name = name + "_" + args.device + "_" \
-                             + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
-                # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                base_dir = os.getcwd()
-                given_name = os.path.join(base_dir, "output", name)
-            else:
-                given_name = None
-
-            sniffer_capture(interface, args.baudrate, args.fifo, args.extcap_control_in, args.extcap_control_out,
-                            auto_test=args.auto_test, timeout=args.timeout, given_name=given_name,
-                            target_device=args.device, target_given_addr=args.dev_addr)
-        except KeyboardInterrupt:
-            pass
-        except Exception as e:
-            import traceback
-
-            logging.info(traceback.format_exc())
-            logging.info('internal error: {}'.format(repr(e)))
-            sys.exit(ERROR_INTERNAL)
+        pass
     else:
         parser.print_help()
         sys.exit(ERROR_USAGE)
 
-    if args.auto_test and given_name is not None:
-        print(f'pcap file: {given_name}')
+    if args.fifo is None:
+        parser.print_help()
+        sys.exit(ERROR_FIFO)
 
-    logging.info('main exit PID {}'.format(os.getpid()))
+    return args
+
+
+if __name__ == '__main__':
+    args = parse_args()
+    params = vars(args)
+
+    pcap_file_name = run_sniffer(params)
+    print(pcap_file_name)
+
+
+
+

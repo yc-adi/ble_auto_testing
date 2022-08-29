@@ -469,10 +469,6 @@ class Packet:
                             types = ['PACKET_TYPE_UNKNOWN', 'PACKET_TYPE_ADVERTISING', 'PACKET_TYPE_DATA']
                             # print(f'\tpacket_type: {types[packet_type]}')
 
-                        # remove me !!!
-                        if self.packetCounter == 3753:
-                            pass
-
                         # Parse BLE packet
                         self.blePacket = BlePacket(packet_type, packetList[BLEPACKET_POS:], self.phy,
                                                    pcapng_parser=self.is_parser)

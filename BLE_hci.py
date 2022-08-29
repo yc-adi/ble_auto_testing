@@ -38,6 +38,33 @@
 # HCI Tool used to control a Bluetooth Controller through a serial port.
 #
 
+"""
+>>> addr 00:11:22:33:44:11
+2022-08-29 11:25:22.674748 > 01F0FF06114433221100
+2022-08-29 11:25:22.687070 < 040E0401F0FF00
+>>> adv -l 5
+2022-08-29 11:25:28.090455 > 01010C08FFFFFFFFFFFFFFFF
+2022-08-29 11:25:28.103605 < 040E0401010C00
+2022-08-29 11:25:28.103637 > 01630C08FFFFFFFFFFFFFFFF
+2022-08-29 11:25:28.119670 < 040E0401630C00
+2022-08-29 11:25:28.119704 > 01010C08FFFFFFFFFFFFFFFF
+2022-08-29 11:25:28.135671 < 040E0401010C00
+2022-08-29 11:25:28.135705 > 01012008FFFFFFFFFFFFFFFF
+2022-08-29 11:25:28.151683 < 040E0401012000
+2022-08-29 11:25:28.151720 > 01312003000707
+2022-08-29 11:25:28.167790 < 040E0401312000
+2022-08-29 11:25:28.167831 > 0106200F600060000000000000000000000700
+2022-08-29 11:25:28.183820 < 040E0401062000
+2022-08-29 11:25:28.183858 > 010A200101
+2022-08-29 11:25:28.199817 < 040E04010A2000
+>>> reset
+2022-08-29 11:25:45.849871 > 01030C00
+2022-08-29 11:25:45.863913 < 040E0401030C00
+>>>
+
+
+"""
+
 import serial
 import sys
 import signal
@@ -136,14 +163,14 @@ class BLE_hci:
     port = serial.Serial()
     serialPort = ""
 
-    def __init__(self, args):
+    def __init__(self, params):
 
         try:
             # Open serial port
-            serialPort = args.serialPort
+            serialPort = params["serialPort"]
             self.port = serial.Serial(
                 port=str(serialPort),
-                baudrate=args.baud,
+                baudrate=params["baud"],
                 parity=serial.PARITY_NONE,
                 stopbits=serial.STOPBITS_ONE,
                 bytesize=serial.EIGHTBITS,
@@ -157,7 +184,7 @@ class BLE_hci:
             sys.exit(1)
 
         except OverflowError as err:
-            print("baud rate exception, " + str(args.baud) + " is too large")
+            print("baud rate exception, " + str(params["baud"]) + " is too large")
             print(err)
             sys.exit(1)
 
@@ -905,25 +932,27 @@ def signal_handler(signal, frame):
     print()
     sys.exit(0)
 
-"""
---serialPort COM9 --command addr 00:11:22:33:44:11
---serialPort COM9 --command addr adv -l 180 -s
-"""
-if __name__ == '__main__':
 
-    # Setup the signal handler to catch the ctrl-C
-    signal.signal(signal.SIGINT, signal_handler)
+def parse_args() -> dict:
+    """Parse the input arguments
 
+        Args:
+            None
+
+        Returns:
+            Put all args into a dictionary
+
+    """
     # Setup the command line description text
     descText = """
-    Bluetooth Low Energy HCI tool.
+        Bluetooth Low Energy HCI tool.
 
-    This tool is used in tandem with the BLE controller examples. This tools sends
-    HCI commands through the serial port to the target device. It will receive and print
-    the HCI events received from the target device.
+        This tool is used in tandem with the BLE controller examples. This tools sends
+        HCI commands through the serial port to the target device. It will receive and print
+        the HCI events received from the target device.
 
-    Serial port is configured as 8N1, no flow control, default baud rate of """ + str(defaultBaud) + """.
-    """
+        Serial port is configured as 8N1, no flow control, default baud rate of """ + str(defaultBaud) + """.
+        """
 
     # Parse the command line arguments
     parser = argparse.ArgumentParser(description=descText, formatter_class=RawTextHelpFormatter)
@@ -934,16 +963,21 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--command', default="", help='Commands to run')
 
     args = parser.parse_args()
-    serialPort = args.serialPort
+
+    return vars(args)
+
+
+def run_terminal(params: dict):
+    serialPort = params["serialPort"]
     print("Bluetooth Low Energy HCI tool")
     print("Serial port: " + serialPort)
-    print("8N1 " + str(args.baud))
-    if (args.command != ""):
-        print("running commands: " + args.command)
+    print("8N1 " + str(params["baud"]))
+    if params["command"] != "":
+        print("running commands: " + params["command"])
     print("")
 
     # Create the BLE_hci object
-    ble_hci = BLE_hci(args)
+    ble_hci = BLE_hci(params)
 
     # Start the terminal argparse
     terminal = argparse.ArgumentParser(prog="", add_help=True)
@@ -1091,9 +1125,9 @@ if __name__ == '__main__':
     setChMap_parser = subparsers.add_parser('setChMap', formatter_class=RawTextHelpFormatter,
                                             help="""Set the connection channel map to a given channel.""")
     setChMap_parser.add_argument('chan', help="""Channel to use in channel map
-    Will set the channel map to the given channel, plus one additional channel.""", nargs="?")
+        Will set the channel map to the given channel, plus one additional channel.""", nargs="?")
     setChMap_parser.add_argument('-m', '--mask', help="""40 bit hex number to use a channel map
-    0xFFFFFFFFFF will use all channels, 0x000000000F will use channels 0-3""")
+        0xFFFFFFFFFF will use all channels, 0x000000000F will use channels 0-3""")
     setChMap_parser.add_argument('--handle', help="Connection handle, integer", default="0")
     setChMap_parser.set_defaults(func=ble_hci.setChMapFunc)
 
@@ -1124,8 +1158,8 @@ if __name__ == '__main__':
     help_parser.set_defaults(func=helpFunc)
 
     # Parse the command input and execute the appropriate function
-    if args.command != "":
-        commands = args.command.split(";")
+    if params["command"] != "":
+        commands = params["command"].split(";")
         for i in range(0, len(commands)):
             # Remove leading and trailing white space
             command = commands[i].strip()
@@ -1176,3 +1210,11 @@ if __name__ == '__main__':
                 sys.exit(int("{0}".format(err)))
 
             # Continue if we get a different code
+
+if __name__ == '__main__':
+    params = parse_args()
+
+    # Setup the signal handler to catch the ctrl-C
+    signal.signal(signal.SIGINT, signal_handler)
+
+    run_terminal(params)

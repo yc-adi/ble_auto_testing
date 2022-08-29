@@ -34,7 +34,9 @@
 
 import argparse
 from argparse import RawTextHelpFormatter
+from BLE_hci import run_terminal
 from datetime import datetime
+from nrf_sniffer_ble import run_sniffer as exe_sniffer
 from os.path import exists
 from pcapng_file_parser import parse_pcapng_file, all_tifs
 from pprint import pprint
@@ -57,10 +59,12 @@ addrs = [
 test_time = 30  # secs
 
 
-def control_board(sleep_secs: int, cmd: str) -> list:
+def control_board(serial_port: str, baud: int, sleep_secs: int, cmd: str) -> list:
     """Send hci commands to the board through the selected serial port
 
         Args:
+            serial_port: serial port
+            baud: baudrate
             sleep_secs: time to sleep in secs
             cmd: the hci commands
 
@@ -72,15 +76,20 @@ def control_board(sleep_secs: int, cmd: str) -> list:
         time.sleep(sleep_secs)
         print(f'{datetime.now()}: end sleeping')
 
-    full_cmd = f'python -m BLE_hci {cmd}'
-    print(full_cmd)
-    with Popen(full_cmd, stdout=PIPE, bufsize=1, universal_newlines=True, shell=True) as p:
-        for line in p.stdout:
-            print(line)
+    print("--- Thread started ---")
+    print(cmd)
+    print("----------------------")
 
-    if p.returncode != 0:
-        print('Failed.')
-        raise CalledProcessError(p.returncode, p.args)
+    params = dict()
+    params["serialPort"] = serial_port
+    params["baud"] = baud
+    params["command"] = cmd
+
+    run_terminal(params)
+
+    print("--------------------")
+    print(cmd)
+    print("--- Thread ended ---")
 
 
 def run_ble_app():
@@ -89,18 +98,17 @@ def run_ble_app():
     """
     board = 0
     timeout = test_time
-    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};adv_-l_{timeout};exit'
-
-    thd1 = Thread(target=control_board, args=(0, cmd,))
+    cmd = f'addr_{addrs[board]};adv_-l_5;exit'
+    thd1 = Thread(target=control_board, args=(serial_ports[board], 115200, 0, cmd,))
     thd1.start()
 
-    time.sleep(5)
+    time.sleep(8)
 
     board = 1
     delay = 8   # secs
-    timeout = test_time - 5 - delay
-    cmd = f'--serialPort {serial_ports[board]} --command addr_{addrs[board]};init_-l_{timeout}_-s_{addrs[0]};reset;exit'
-    thd2 = Thread(target=control_board, args=(delay, cmd,))
+    timeout = test_time - 8 - delay
+    cmd = f'addr_{addrs[board]};init_-l_{timeout}_-s_{addrs[0]};reset;exit'
+    thd2 = Thread(target=control_board, args=(serial_ports[board], 115200, delay, cmd,))
     thd2.start()
 
     time.sleep(1)
@@ -134,7 +142,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
         Returns:
             res (dict): sniffer result info are saved in a dictionary
                         keys: 'pcap_file_name'
-    """
+
     if device_name == "":
         cmd = f'python -m nrf_sniffer_ble --capture --extcap-interface {interface_name} --fifo FIFO ' \
               f'--extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT ' \
@@ -159,6 +167,26 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
         print(f'Error: {e}')
         p.stdout.close()
     return res
+    """
+    params = dict()
+    params["capture"] = True
+    params["coded"] = False
+    params["extcap_interfaces"] = False
+    params["extcap_interface"] = interface_name
+    params["auto_test"] = True
+    params["device"] = device_name
+    params["baudrate"] = None
+    params["fifo"] = "FIFO"
+    params["extcap_control_in"] = "EXTCAP_CONTROL_IN"
+    params["extcap_control_out"] = "EXTCAP_CONTROL_OUT"
+    params["timeout"] = timeout
+    params["dev_addr"] = dev_adv_addr
+
+    res = dict()
+    res['pcap_file_name'] = exe_sniffer(params)
+
+    return res
+
 
 def run_parser(file_type: int, pcapng_file: str):
     """Run the pcap/pcapng file parser on the saved sniffer file
@@ -203,40 +231,18 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
             None
     """
     cmd = f'{tshark} -F pcapng -r {pcap_file} -w {pcapng_file}'
-    with Popen(cmd, stdout=PIPE, universal_newlines=True) as p:
-        for line in p.stdout:
-            print(line)
+    print(f'Running: {cmd}')
 
-    if p.returncode != 0:
-        print('Fail to convert pcap file to pcapng file.')
-        raise CalledProcessError(p.returncode, p.args)
-
-
-def test():
-    cmd = 'python -m nrf_sniffer_ble --capture --extcap-interface /dev/ttyACM0-None --fifo FIFO --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20'
-    res = dict()
-
-    """
-    p = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=True, encoding='utf-8', errors='replace')
-    while True:
-        output = p.stdout.readline()
-        if output == '' and p.poll() is not None:
-            break
-
-        if output:
-            print(output.strip(), flush=True)
-    """
     try:
-        p = Popen(cmd, stdout=PIPE, bufsize=1, shell=True)
+        p = Popen(cmd, stdout=PIPE, shell=True)
         for line in iter(p.stdout.readline, b''):
-            print(line.strip().decode('utf-8'))
+            pass
         p.stdout.close()
         p.wait()
 
     except Exception as e:
         print(f'Error: {e}')
         p.stdout.close()
-    return res
 
 
 def get_args():
@@ -273,9 +279,6 @@ def get_args():
 
 
 if __name__ == "__main__":
-    # res = test()
-    # exit(1)
-
     args = get_args()
 
     # Update the parameters
@@ -300,12 +303,12 @@ if __name__ == "__main__":
         print("Sniffer failed!")
         exit(1)
 
-    pcap_file = res["pcap_file_name"]
-    print(f'Parse file: {pcap_file}')
-
     # Wait the threads to finish.
     thd1.join()
     thd2.join()
+
+    pcap_file = res["pcap_file_name"]
+    print(f'Parse file: {pcap_file}')
 
     # Parse the saved file.
     if exists(pcap_file):
