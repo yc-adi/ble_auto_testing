@@ -9,9 +9,7 @@ on:
 jobs:
     # job 1
     verify_tifs:
-        name: verify_tifs
-        runs-on:
-            - self-hosted
+        runs-on: self-hosted
 
         steps:
            - name: step 1
