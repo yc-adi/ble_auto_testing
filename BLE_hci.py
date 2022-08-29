@@ -51,7 +51,7 @@ import threading
 
 # Setup the default serial port settings
 defaultBaud = 115200
-defaultSP = "/dev/ttyUSB0"
+defaultSP = "/dev/ttyUSB1"
 
 # Setup the default Bluetooth settings
 defaultAdvInterval = "0x60"

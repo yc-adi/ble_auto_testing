@@ -261,7 +261,8 @@ class PacketReader(Notifications.Notifier):
     def sendFollow(self, addr, followOnlyAdvertisements = False, followOnlyLegacy = False, followCoded = False):
         flags0 = followOnlyAdvertisements | (followOnlyLegacy << 1) | (followCoded << 2)
         logging.info("Follow flags: %s" % bin(flags0))
-        self.sendPacket(REQ_FOLLOW, addr + [flags0])
+        if addr:
+            self.sendPacket(REQ_FOLLOW, addr + [flags0])
 
     def sendPingReq(self):
         self.sendPacket(PING_REQ, [])

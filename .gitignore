@@ -9,3 +9,5 @@ output/
 
 EXTCAP_CONTROL_OUT
 FIFO
+my_test.py
+

@@ -69,8 +69,10 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
     def __init__(self, portnum=None, baudrate=UART.SNIFFER_OLD_DEFAULT_BAUDRATE, auto_test=False,
                  given_name=None, **kwargs):
         threading.Thread.__init__(self)
+        self._packetReader = None
         SnifferCollector.SnifferCollector.__init__(self, portnum, baudrate=baudrate, auto_test=auto_test,
                                                    given_name=given_name, **kwargs)
+
         self.daemon = True
 
         self.subscribe("COMPORT_FOUND", self.comPortFound)

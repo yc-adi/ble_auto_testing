@@ -258,7 +258,8 @@ class SnifferCollector(Notifications.Notifier):
     def _doExit(self):
         self._exit = True
         self.notify("APP_EXIT")
-        self._packetReader.doExit()
+        if self._packetReader:
+            self._packetReader.doExit()
         # Clear method references to avoid uncollectable cyclic references
         self.clearCallbacks()
         self._devices.clearCallbacks()

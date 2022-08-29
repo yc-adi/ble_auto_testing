@@ -37,8 +37,9 @@ from argparse import RawTextHelpFormatter
 from datetime import datetime
 from os.path import exists
 from pcapng_file_parser import parse_pcapng_file, all_tifs
+from pprint import pprint
 import statistics
-from subprocess import Popen, PIPE, CalledProcessError
+from subprocess import call, Popen, PIPE, CalledProcessError, STDOUT
 from threading import Thread
 import time
 
@@ -144,22 +145,20 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
             f'--device {device_name} --auto-test --timeout {timeout}'
     print(cmd)
 
-    # p = subprocess.Popen(cmd, stdout=subprocess.PIPE, shell=True)
-    # out, err = p.communicate()
-    # result = out.split('\n')
-    # result = subprocess.check_call(cmd, shell=True)
     res = dict()
-    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
-        for line in p.stdout:
+    try:
+        p = Popen(cmd, stdout=PIPE, shell=True)
+        for line in iter(p.stdout.readline, b''):
             temp = line.split(': ')
             if temp[0] == 'pcap file':
                 res['pcap_file_name'] = temp[1].replace('\n', '')
+        p.stdout.close()
+        p.wait()
 
-    if p.returncode != 0:
-        raise CalledProcessError(p.returncode, p.args)
-
+    except Exception as e:
+        print(f'Error: {e}')
+        p.stdout.close()
     return res
-
 
 def run_parser(file_type: int, pcapng_file: str):
     """Run the pcap/pcapng file parser on the saved sniffer file
@@ -204,13 +203,40 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
             None
     """
     cmd = f'{tshark} -F pcapng -r {pcap_file} -w {pcapng_file}'
-    with Popen(cmd, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
+    with Popen(cmd, stdout=PIPE, universal_newlines=True) as p:
         for line in p.stdout:
             print(line)
 
     if p.returncode != 0:
         print('Fail to convert pcap file to pcapng file.')
         raise CalledProcessError(p.returncode, p.args)
+
+
+def test():
+    cmd = 'python -m nrf_sniffer_ble --capture --extcap-interface /dev/ttyACM0-None --fifo FIFO --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20'
+    res = dict()
+
+    """
+    p = Popen(cmd, stdout=PIPE, stderr=STDOUT, shell=True, encoding='utf-8', errors='replace')
+    while True:
+        output = p.stdout.readline()
+        if output == '' and p.poll() is not None:
+            break
+
+        if output:
+            print(output.strip(), flush=True)
+    """
+    try:
+        p = Popen(cmd, stdout=PIPE, bufsize=1, shell=True)
+        for line in iter(p.stdout.readline, b''):
+            print(line.strip().decode('utf-8'))
+        p.stdout.close()
+        p.wait()
+
+    except Exception as e:
+        print(f'Error: {e}')
+        p.stdout.close()
+    return res
 
 
 def get_args():
@@ -241,17 +267,18 @@ def get_args():
     parser.add_argument('--tshark', help='tshark program to convert pcap to pcapng', default=
                         "C:\\Program Files\\Wireshark\\tshark.exe")
     args = parser.parse_args()
+    pprint(args)
 
     return args
 
 
 if __name__ == "__main__":
+    # res = test()
+    # exit(1)
+
     args = get_args()
 
-    # Run the BLE5_ctr on two DevKit boards. Get the control thread for each board.
-    thd1, thd2 = run_ble_app()
-    print(f'{datetime.now()}: Test started. Run sniffer.')
-
+    # Update the parameters
     interface = args.interface
     device = args.device
     addrs[0] = args.brd0_addr
@@ -261,8 +288,18 @@ if __name__ == "__main__":
     serial_ports[1] = args.sp1
     test_time = args.time
 
+    # Run the BLE5_ctr on two DevKit boards. Get the control thread for each board.
+    thd1, thd2 = run_ble_app()
+    print(f'{datetime.now()}: Test started. Run sniffer.')
+
     timeout = test_time + 10   # secs
     res = run_sniffer(interface, device, dev_adv_addr, timeout)
+    if "pcap_file_name" not in res:
+        thd1.join()
+        thd2.join()
+        print("Sniffer failed!")
+        exit(1)
+
     pcap_file = res["pcap_file_name"]
     print(f'Parse file: {pcap_file}')
 

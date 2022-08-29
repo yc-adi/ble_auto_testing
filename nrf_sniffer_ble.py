@@ -671,9 +671,17 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                     time.sleep(1)
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                     if target_dev_addr is not None:
-                        logging.info(f'After tried {tried} times, found the target device address: {target_dev_addr}')
+                        msg = f'After tried {tried} times, found the target device address: {target_dev_addr}'
+                        print(msg)
+                        logging.info(msg)
                         break
                     tried += 1
+                    print(f'Tried {tried} times to find the target device.')
+                if tried >= 15:
+                    msg = f'Failed to find the target device with {target_dev_addr}'
+                    print(msg)
+                    logging.info(msg)
+                    sniffer.doExit()
                 control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
             else:
                 control_read_initial_values(sniffer)
@@ -914,7 +922,9 @@ if __name__ == '__main__':
         try:
             logging.info('sniffer capture')
             if args.auto_test:
-                name = interface + "_" + args.device + "_" \
+                if interface[0] == '/':
+                    name = interface[1:].replace("/", "-")
+                name = name + "_" + args.device + "_" \
                              + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
                 # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
                 base_dir = os.getcwd()
@@ -937,7 +947,7 @@ if __name__ == '__main__':
         parser.print_help()
         sys.exit(ERROR_USAGE)
 
-    if args.auto_test:
+    if args.auto_test and given_name is not None:
         print(f'pcap file: {given_name}')
 
     logging.info('main exit PID {}'.format(os.getpid()))
