@@ -151,7 +151,9 @@ if __name__ == "__main__":
             print("TIFS verification: PASS")
         else:
             print("TIFS verification: FAIL")
+            exit(11)
     else:
         print("No TIFS captured.")
+        exit(10)
 
     # print("Done!")

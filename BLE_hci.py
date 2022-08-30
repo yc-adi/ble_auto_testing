@@ -968,6 +968,8 @@ def parse_args() -> dict:
 
 
 def run_terminal(params: dict):
+    global terminal
+    
     serialPort = params["serialPort"]
     print("Bluetooth Low Energy HCI tool")
     print("Serial port: " + serialPort)

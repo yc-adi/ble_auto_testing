@@ -624,15 +624,17 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
     """Start the sniffer to capture packets"""
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
+    sniffer = None
+
     try:
         fn_capture = open(fifo, 'wb', 0)
 
         if control_out is not None:
             fn_ctrl_out = open(control_out, 'wb', 0)
             setup_extcap_log_handler()
-
+        
         if control_in is not None:
-            fn_ctrl_in = open(control_in, 'rb', 0)
+            fn_ctrl_in = open(control_in, 'ab+', 0)
 
         logging.info("Log started at %s", time.strftime("%c"))
 
@@ -744,8 +746,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
         # Safe to use logging again.
         logging.info("Tearing down")
-
-        sniffer.doExit()
+        if sniffer:
+            sniffer.doExit()
+            
         if fn_capture is not None and not fn_capture.closed:
             fn_capture.close()
 
@@ -846,7 +849,7 @@ def run_sniffer(params: dict):
         sys.exit(ERROR_INTERNAL)
 
     if params["auto_test"] and given_name is not None:
-        print(f'pcap file: {given_name}')
+        print(f'pcap file saved: {given_name}')
 
     logging.info('main exit PID {}'.format(os.getpid()))
 

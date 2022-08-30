@@ -308,7 +308,7 @@ if __name__ == "__main__":
     thd2.join()
 
     pcap_file = res["pcap_file_name"]
-    print(f'Parse file: {pcap_file}')
+    print(f'Next: parse file "{pcap_file}"')
 
     # Parse the saved file.
     if exists(pcap_file):
@@ -319,3 +319,6 @@ if __name__ == "__main__":
         # Parse the results.
         file_type = 1
         run_parser(file_type, pcapng_file)
+    else:
+        print(f'File {pcap_file} not exist.')
+        exit(13)

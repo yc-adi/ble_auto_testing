@@ -1,0 +1,50 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ble auto test - all",
+            "type": "python",
+            "request": "launch",
+            "program": "./ble_auto_testing.py",
+            "args": [
+                "--interface", "/dev/ttyACM0-None",
+                "--device", "",
+                "--brd0-addr", "00:11:22:33:44:11",
+                "--brd1-addr", "00:11:22:33:44:12",
+                "--sp0", "/dev/ttyUSB1",
+                "--sp1", "/dev/ttyUSB3",
+                "--time", "30",
+                "--tshark", "/usr/bin/tshark"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "BLE_hci DevKit 1",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": [
+                "--serialPort",
+                "/dev/ttyUSB3"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "BLE_hci DevKit 0",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "args": [
+                "--serialPort",
+                "/dev/ttyUSB1"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}

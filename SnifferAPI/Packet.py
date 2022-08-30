@@ -369,8 +369,8 @@ class Packet:
             self.OK = False
             self.valid = False
         except Exception as e:
-            logging.exception("packet creation error %s" %str(e))
-            logging.info("packetList: " + str(packetList))
+            # logging.exception("packet creation error %s" %str(e))
+            # logging.info("packetList: " + str(packetList))
             self.OK = False
             self.valid = False
 
