@@ -496,7 +496,7 @@ class Packet:
                             else:
                                 cases = [
                                     # self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
-                                    self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
+                                    #self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
                                 ]
                                 if any(cases):
                                     test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
