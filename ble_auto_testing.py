@@ -58,6 +58,10 @@ addrs = [
 
 test_time = 30  # secs
 
+# RESULT CODE
+RES_FAIL = 11
+RES_NO_TIFS_CAPTURED = 12
+RES_PCAP_FILE_NOT_EXIST = 13
 
 def control_board(serial_port: str, baud: int, sleep_secs: int, cmd: str) -> list:
     """Send hci commands to the board through the selected serial port
@@ -188,7 +192,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     return res
 
 
-def run_parser(file_type: int, pcapng_file: str):
+def run_parser(file_type: int, pcapng_file: str) -> int:
     """Run the pcap/pcapng file parser on the saved sniffer file
         Example command: python -m pcapng_file_parser
 
@@ -199,10 +203,11 @@ def run_parser(file_type: int, pcapng_file: str):
             pcapng_file: the saved sniffer pcapng file name with path
 
         Returns:
-            None
+            err_code: or test result, 0, pass, 1, fail, 2, no TIFS captured
     """
     parse_pcapng_file(file_type, pcapng_file)
 
+    res = 0
     if len(all_tifs) > 0:
         max_tifs = max(all_tifs)
         min_tifs = min(all_tifs)
@@ -212,11 +217,15 @@ def run_parser(file_type: int, pcapng_file: str):
               f'median: {statistics.median(all_tifs)}')
         if max_tifs <= 152 and min_tifs >= 148:
             print("TIFS verification: PASS")
+            res = 0
         else:
             print("TIFS verification: FAIL")
+            res = 1
     else:
         print("No TIFS captured.")
-
+        res = 2
+    
+    return res
 
 def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
     """Convert pcap file to pcapng file
@@ -318,7 +327,11 @@ if __name__ == "__main__":
 
         # Parse the results.
         file_type = 1
-        run_parser(file_type, pcapng_file)
+        result = run_parser(file_type, pcapng_file)
+        if result == 1:
+            exit(RES_FAIL)
+        elif result == 2:
+            exit(RES_NO_TIFS_CAPTURED)
     else:
         print(f'File {pcap_file} not exist.')
-        exit(13)
+        exit(RES_PCAP_FILE_NOT_EXIST)
