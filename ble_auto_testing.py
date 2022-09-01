@@ -287,9 +287,16 @@ def get_args():
     return args
 
 
-if __name__ == "__main__":
-    args = get_args()
+def run_tifs_test(args) -> int:
+    """Run TIFS test once.
+        Args:
+            args: the user input arguments
 
+        Returns:
+            res: 0, Pass the TIFS verification
+                 1, Fail to capture TIFS packets
+                 2, Pcap file not exist
+    """
     # Update the parameters
     interface = args.interface
     device = args.device
@@ -310,7 +317,7 @@ if __name__ == "__main__":
         thd1.join()
         thd2.join()
         print("Sniffer failed!")
-        exit(1)
+        return 2
 
     # Wait the threads to finish.
     thd1.join()
@@ -328,10 +335,32 @@ if __name__ == "__main__":
         # Parse the results.
         file_type = 1
         result = run_parser(file_type, pcapng_file)
-        if result == 1:
+
+        if result == 0:
+            return 0
+        elif result == 1:
             exit(RES_FAIL)
         elif result == 2:
-            exit(RES_NO_TIFS_CAPTURED)
+            return 1
     else:
         print(f'File {pcap_file} not exist.')
-        exit(RES_PCAP_FILE_NOT_EXIST)
+        return 2
+
+
+if __name__ == "__main__":
+    args = get_args()
+
+    tried = 0
+    res = 0
+    while tried < 3:
+        res = run_tifs_test(args)
+
+        if res == 0:
+            break
+        else:
+            tried += 1
+
+        time.sleep(1)
+
+    if res > 0:
+        exit(res)
