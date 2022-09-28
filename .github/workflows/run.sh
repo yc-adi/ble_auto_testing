@@ -19,8 +19,8 @@ then
     jtag_sn_2=040900006bd8439a00000000000000000000000097969906
     DevKitUart0Sn_1="D3073IDG"
     DevKitUart0Sn_2="D309ZDE9"
-    DevKitUart3Sn_1="DT03O9WB"
-    DevKitUart3Sn_2="DT03OFQ0"    
+    DevKitUart3Sn_1="DT03OFRJ"
+    DevKitUart3Sn_2="DT03NSU1"    
 else  # wall-e
     sniffer_sn="000680435664"
     jtag_sn_1=04091702d4f18ac600000000000000000000000097969906
