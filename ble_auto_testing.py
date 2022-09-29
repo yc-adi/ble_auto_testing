@@ -361,6 +361,7 @@ if __name__ == "__main__":
             tried += 1
 
         time.sleep(1)
+        print(f'Tried {tried} times.')
 
     if res > 0:
         exit(res)
