@@ -24,6 +24,8 @@ Plug in DevKit 0 UART3 cable -> /dev/ttyUSB1
 Power up DevKit 1 -> /dev/ttyUSB2  
 Plug in DevKit 1 UART3 cable -> /dev/ttyUSB3  
 
+It is helpful to use "ll /dev/serial/by-id" to check the serial ports.  
+
 ### Local test
 
 ### Windows
@@ -40,7 +42,10 @@ python -m ble-auto-testing --interface COM4-None --device "" --brd0-addr 00:11:2
 ### Linux
 
 ```
-/home/ying-cai/Workspace/ble_auto_testing/venv/bin/python /home/ying-cai/Workspace/ble_auto_testing/ble_auto_testing.py --interface /dev/ttyACM0-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 /dev/ttyUSB1 --sp1 /dev/ttyUSB3 --time 30 --tshark /usr/bin/tshark
+export SNIFFER=/dev/ttyACM1-None
+export BD0_UART3=/dev/ttyUSB0
+export BD1_UART3=/dev/ttyUSB1
+/home/ying-cai/Workspace/ble_auto_testing/venv/bin/python /home/ying-cai/Workspace/ble_auto_testing/ble_auto_testing.py --interface $SNIFFER --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $BD0_UART3 --sp1 $BD1_UART3 --time 30 --tshark /usr/bin/tshark
 ```
 
 
