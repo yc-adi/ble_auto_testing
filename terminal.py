@@ -34,7 +34,9 @@
 ###############################################################################
 
 import ble_hci_parser
+from pytimedinput import timedInput
 import os
+import select
 import sys
 import time
 import threading
@@ -51,6 +53,7 @@ class Terminal(threading.Thread):
         self.name = name
         self.kill_received = False
         self.hci_parsers = []
+        self.input = ""
 
     def add_hci_parser(self, params):
         """add a ble_hci_parser object
@@ -61,13 +64,56 @@ class Terminal(threading.Thread):
         self.hci_parsers.append(hci_parser)
         return len(self.hci_parsers)
 
+    def input_cmd(self, dut, cmd):
+        """directly input cmd to the terminal
+            param dut: the board index
+            param cmd: the cmd string
+
+            return: none
+        """
+        print(f'DUT {dut}: {cmd}')
+
+        args = cmd.split()
+        try:
+            cmd_parser = self.hci_parsers[dut].hci_parser
+            cmd_parser.args = cmd_parser.parse_args(args)
+            cmd_parser.args.func(cmd_parser.args)
+        except SystemExit:
+            # ignore the exit from argparse help option
+            pass
+
     def run(self):
+        print(f'{self.name} starts to run.')
+
         err_id = 0
+        input_time_out = False
         while not self.kill_received:
             # Get the terminal input
-            term_input = input('>>> ')
+            if input_time_out:
+                #term_input, timed_out = timedInput(prompt="", timeout=1)
+                pass
+            else:
+                #term_input, timed_out = timedInput(prompt=">>>", timeout=1)
+                print(">>>", end="")
+            with_input, o, e = select.select([sys.stdin], [], [], 1)
+
+            if not with_input:
+                input_time_out = True
+
+                if self.input != "":
+                    print(f'INPUT: {self.input}')
+
+                    args = self.input.split()
+
+                    self.input = ""
+                else:
+                    continue
+            else:
+                input_time_out = False
+                term_input = sys.stdin.readline().strip()
+                args = term_input.split()
+
             # Parse the input and execute the appropriate function
-            args = term_input.split()
             try:
                 # print(f'{args}')
 
@@ -94,6 +140,7 @@ class Terminal(threading.Thread):
                     cmd_parser.args = cmd_parser.parse_args(args[1:])
                     cmd_parser.args.func(cmd_parser.args)
                 except SystemExit:
+                    # ignore the exit from argparse help option
                     continue
 
             except AttributeError:

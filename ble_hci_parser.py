@@ -53,7 +53,7 @@ class BleHciParser:
 
         # parser for cmd "addr"
         addr_parser = subs.add_parser('addr', description="Set the device address.")
-        addr_parser.add_argument('address', help="Set the device address, ex: 00:11:22:33:44:55 ")
+        addr_parser.add_argument('addr', help="Set the device address, ex: 00:11:22:33:44:55 ")
         addr_parser.set_defaults(func=self.hci_console.addrFunc)
 
         # parser for cmd "adv"
@@ -127,7 +127,7 @@ class BleHciParser:
         # parser for cmd "phy"
         phy_parser = subs.add_parser('phy', description="Update the PHY in the active connection",
                                      formatter_class=argparse.RawTextHelpFormatter)
-        phy_parser.add_argument('PHY', help=
+        phy_parser.add_argument('phy', help=
         """
                                 Desired PHY
                                 1: 1M
