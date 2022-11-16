@@ -140,7 +140,8 @@ def phy_timing_test(terminal_thd, addr1, addr2):
     terminal_thd.input_cmd(1, "init -l 1 -s " + addr1)
     time.sleep(3)
 
-    terminal_thd.input_cmd(0, "phy 2")
+    #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
+    terminal_thd.input_cmd(1, "phy 2")  # the PHY switching time is about 67.5 ms.
     time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
@@ -295,7 +296,7 @@ def check_results():
         print("phy_switch_time is None.")
         res = 2
     else:
-        if Packet.phy_switch_time > 60.0 / 1E3:  # ms
+        if Packet.phy_switch_time > 70.0 / 1E3:  # ms
             print(f'PHY switch time verification: FAIL')
             res = 3
         else:
