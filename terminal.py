@@ -34,7 +34,7 @@
 ###############################################################################
 
 import ble_hci_parser
-from pytimedinput import timedInput
+import datetime
 import os
 import select
 import sys
@@ -71,7 +71,7 @@ class Terminal(threading.Thread):
 
             return: none
         """
-        print(f'DUT {dut}: {cmd}')
+        print(f'{str(datetime.datetime.now())} - DUT {dut}: {cmd}')
 
         args = cmd.split()
         try:
@@ -101,7 +101,7 @@ class Terminal(threading.Thread):
                 input_time_out = True
 
                 if self.input != "":
-                    print(f'INPUT: {self.input}')
+                    print(f'{str(datetime.datetime.now())} - INPUT: {self.input}')
 
                     args = self.input.split()
 
@@ -147,9 +147,9 @@ class Terminal(threading.Thread):
                 continue
 
         if err_id == ERR_EXIT:
-            print(f'Exited by command exit.')
+            print(f'{str(datetime.datetime.now())} - Exited by command exit.')
         elif err_id == ERR_INVALID_DUT_ID:
-            print(f'Invalid DUT ID "{args[0]}" in the command "{term_input}"')
+            print(f'{str(datetime.datetime.now())} - Invalid DUT ID "{args[0]}" in the command "{term_input}"')
 
 
 def has_live_threads(threads):

@@ -50,6 +50,7 @@ import struct
 import logging
 from pprint import pprint
 from SnifferAPI import Logger
+from SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
 
 try:
     import serial
@@ -57,8 +58,6 @@ except ImportError:
     Logger.initLogger()
     logging.error(f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry')
     sys.exit(f'pyserial not found, please run: "{sys.executable} -m pip install -r requirements.txt" and retry')
-
-from SnifferAPI import Sniffer, UART, Devices, Pcap, Exceptions
 
 ERROR_USAGE = 0
 ERROR_ARG = 1
@@ -116,6 +115,9 @@ zero_addr = "[00,00,00,00,00,00,0]"
 # While searching for a selected Device we must not write packets to the pipe until
 # the device is found to avoid getting advertising packets from other devices.
 write_new_packets = False
+# Because there are captured packets in the queue, must use this time to
+# check if should write or not.
+last_parsed_packet_time = None
 
 # The RSSI capture filter value given from Wireshark.
 rssi_filter = 0
@@ -173,7 +175,7 @@ def extcap_interfaces():
     for interface_port in get_interfaces():
         if sys.platform == 'win32':
             print("interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE %s}" % (
-            interface_port, extcap_version, interface_port))
+                interface_port, extcap_version, interface_port))
         else:
             print("interface {value=%s-%s}{display=nRF Sniffer for Bluetooth LE}" % (interface_port, extcap_version))
 
@@ -201,7 +203,7 @@ def extcap_interfaces():
     print("value {control=%d}{value=%s}{display=Follow IRK}" % (CTRL_ARG_DEVICE, zero_addr))
 
     print("value {control=%d}{value=%d}{display=Legacy Passkey}{default=true}" % (
-    CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_PASSKEY))
+        CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_PASSKEY))
     print("value {control=%d}{value=%d}{display=Legacy OOB data}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_OOB))
     print("value {control=%d}{value=%d}{display=Legacy LTK}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_LEGACY_LTK))
     print("value {control=%d}{value=%d}{display=SC LTK}" % (CTRL_ARG_KEY_TYPE, CTRL_KEY_TYPE_SC_LTK))
@@ -270,12 +272,16 @@ def capture_write(message):
 
 def new_packet(notification):
     """A new Bluetooth LE packet has arrived"""
+    global last_parsed_packet_time
+
     if write_new_packets:
         packet = notification.msg["packet"]
+        last_parsed_packet_time = packet.time
 
         if rssi_filter == 0 or in_follow_mode is True or packet.RSSI > rssi_filter:
             p = bytes([packet.boardId] + packet.getList())
             capture_write(Pcap.create_packet(p, packet.time))
+            # TRACE: 130
 
 
 def device_added(notification):
@@ -401,7 +407,7 @@ def clear_devices(sniffer):
 
 def follow_device(sniffer, device):
     """Follow the selected device"""
-    global write_new_packets, in_follow_mode
+    global in_follow_mode
 
     sniffer.follow(device, capture_only_advertising, capture_only_legacy_advertising, capture_coded)
     time.sleep(.1)
@@ -632,7 +638,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         if control_out is not None:
             fn_ctrl_out = open(control_out, 'wb', 0)
             setup_extcap_log_handler()
-        
+
         if control_in is not None:
             fn_ctrl_in = open(control_in, 'ab+', 0)
 
@@ -659,8 +665,10 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         logging.info("Software version: %s" % sniffer.swversion)
         sniffer.getFirmwareVersion()
         sniffer.getTimestamp()
+
         sniffer.start()
-        logging.info("sniffer started")
+        logging.info(f"sniffer started. auto_test: {auto_test}")
+
         sniffer.scan(capture_scan_response, capture_scan_aux_pointer, capture_coded)
         logging.info("scanning started")
 
@@ -673,17 +681,21 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                     time.sleep(1)
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                     if target_dev_addr is not None:
-                        msg = f'After tried {tried} times, found the target device address: {target_dev_addr}'
+                        msg = f'{str(datetime.datetime.now())} - After tried {tried} times, ' \
+                              f'found the target device "{target_device}" address: {target_dev_addr}'
                         print(msg)
                         logging.info(msg)
                         break
                     tried += 1
-                    print(f'Tried {tried} times to find the target device.')
+                    print(f'Tried {tried} times to find the target device "{target_device}".')
+
                 if tried >= 15:
-                    msg = f'Failed to find the target device with {target_dev_addr}'
+                    msg = f'Failed to find the target device "{target_device}" with given address "{target_given_addr}"'
                     print(msg)
                     logging.info(msg)
-                    sniffer.doExit()
+                    sniffer.doExit("sniffer_capture(), fn_ctr_in/out")
+                    raise Exception
+
                 control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
             else:
                 control_read_initial_values(sniffer)
@@ -695,6 +707,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             # Start receiving packets
             logging.info("")
             write_new_packets = True
+            write_new_packet_end_time = time.time() + timeout
 
             # Start the control loop
             if not auto_test:
@@ -703,15 +716,58 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                 logging.info("exiting control loop")
             else:
                 start_time = time.time()
-                logging.info(f'start time: {time.ctime(start_time)}')
+                msg = f'Start: {time.ctime(start_time)}'
+                logging.info(msg)
+
+                operation_timeout = False
+                last_packet_time_after_timeout = None
                 while True:
                     # Wait for keyboardinterrupt
-                    if auto_test:
+                    if last_parsed_packet_time is not None:
+                        curr = time.time()
+                        delta_secs = curr - start_time
+                        if delta_secs > timeout and not operation_timeout:
+                            msg = f'Try to end by op time, start: {time.ctime(start_time)}, '\
+                                  f'totally {delta_secs:.0f} secs.'
+                            logging.info(msg)
+                            print(f'{str(datetime.datetime.now())} - {msg}')
+
+                            operation_timeout = True
+                            last_packet_time_after_timeout = last_parsed_packet_time
+
+                            time.sleep(1)
+
+                            last_check_time = time.time()
+
+                        if operation_timeout:
+                            time.sleep(1)
+                            if last_packet_time_after_timeout == last_parsed_packet_time:
+                                msg = f'End by no more saved packets, {time.ctime(curr)}, ' \
+                                      f'totally {delta_secs:.0f} secs.'
+                                logging.info(msg)
+                                print(f'{str(datetime.datetime.now())} - {msg}')
+                                break
+                            else:
+                                curr = time.time()
+                                if curr - last_check_time > 1.0:  # check every 1 sec
+                                    last_check_time = curr
+                                    print(f'{str(datetime.datetime.now())} - {last_parsed_packet_time}, '
+                                          f'{last_packet_time_after_timeout}, {time.ctime(last_parsed_packet_time)}')
+
+                            last_packet_time_after_timeout = last_parsed_packet_time
+
+                        if last_parsed_packet_time - start_time > timeout:
+                            msg = f'End by timeout, {time.ctime(last_parsed_packet_time)}, ' \
+                                  f'totally {last_parsed_packet_time - start_time:.0f} secs.'
+                            logging.info(msg)
+                            print(f'{str(datetime.datetime.now())} - {msg}')
+                            break
+                    else:
                         curr = time.time()
                         delta_secs = curr - start_time
                         if delta_secs > timeout:
-                            logging.info(f'end time: {time.ctime(curr)}, totally {delta_secs:.0f} secs.')
-                            logging.info("")
+                            msg = f'End  : {time.ctime(curr)}, totally {delta_secs:.0f} secs.'
+                            logging.info(msg)
                             break
         else:
             logging.info("")
@@ -745,10 +801,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         teardown_extcap_log_handler()
 
         # Safe to use logging again.
-        logging.info("Tearing down")
         if sniffer:
-            sniffer.doExit()
-            
+            sniffer.doExit("sniffer_capture() finally")
+
         if fn_capture is not None and not fn_capture.closed:
             fn_capture.close()
 
@@ -818,12 +873,12 @@ def run_sniffer(params: dict):
             params: the dict from input arguments
 
         Returns:
-            None
+            pcap file name
     """
     interface = params["extcap_interface"]
 
     try:
-        logging.info('sniffer capture')
+        logging.info(f'sniffer capture: {params}')
         if params["auto_test"]:
             if interface[0] == '/':
                 name = interface[1:].replace("/", "-")
@@ -849,11 +904,12 @@ def run_sniffer(params: dict):
         sys.exit(ERROR_INTERNAL)
 
     if params["auto_test"] and given_name is not None:
-        print(f'pcap file saved: {given_name}')
+        print(f'{str(datetime.datetime.now())} - pcap file saved: {given_name}')
 
     logging.info('main exit PID {}'.format(os.getpid()))
 
     return given_name
+
 
 def parse_args():
     """Parse input arguments
@@ -984,7 +1040,3 @@ if __name__ == '__main__':
 
     pcap_file_name = run_sniffer(params)
     print(pcap_file_name)
-
-
-
-

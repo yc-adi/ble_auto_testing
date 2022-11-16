@@ -34,10 +34,15 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
 import logging
-
 from . import Logger
 from . import UART
+import sys
+import os
+import threading
+from . import SnifferCollector
+from .Packet import test_log
 
 try:
     from .version import VERSION_STRING
@@ -45,20 +50,14 @@ except:
     VERSION_STRING = "Unknown Version"
 
 
-def initLog():
+def init_log():
     Logger.initLogger()
 
     logging.info("--------------------------------------------------------")
     logging.info("Software version: " + VERSION_STRING)
 
 
-initLog()
-
-
-import sys
-import os
-import threading
-from . import SnifferCollector
+init_log()
 
 
 class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
@@ -178,7 +177,11 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
     # Gracefully shut down the sniffer threads and connections.
     # If join is True, join the sniffer thread until it quits.
     # Returns nothing.
-    def doExit(self, join=False):
+    def doExit(self, caller, join=False):
+        if test_log:
+            msg = f'{str(datetime.datetime.now())} - from {caller}, Sniffer, doExit().\n'
+            print(msg)
+            test_log.write(msg)
         self._doExit()
         if join:
             self.join()

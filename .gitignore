@@ -7,7 +7,8 @@ output/
 
 *.log
 
+EXTCAP_CONTROL_IN
 EXTCAP_CONTROL_OUT
 FIFO
-my_test.py
+
 

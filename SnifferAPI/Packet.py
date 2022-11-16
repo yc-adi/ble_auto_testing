@@ -34,8 +34,11 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
 from . import UART, Exceptions, Notifications
-import time, logging, os, sys, serial
+import time
+import logging
+import os, sys, serial
 from .Types import *
 
 
@@ -67,9 +70,23 @@ VALID_ADV_CHANS = [37, 38, 39]
 
 PACKET_COUNTER_CAP = 2**16
 
-test_log = open("test.log", "w")
+test_log = open("test_packet_info.log", "w")
 test_tifs_log = open("test_tifs_log.log", "w")
+
 all_tifs = list()
+
+# PHY switching state
+PHY_SW_ST_INIT = 0
+PHY_SW_ST_REQ = 1
+PHY_SW_ST_UPDATE = 2
+PHY_SW_ST_CHANGING = 3
+PHY_SW_ST_DONE = 4
+
+# search "Check PHY switch" to locate the code
+phy_switch_state = PHY_SW_ST_INIT
+phy_switch_start = None
+phy_switch_end = None
+phy_switch_time = None
 
 
 class PacketReader(Notifications.Notifier):
@@ -95,7 +112,12 @@ class PacketReader(Notifications.Notifier):
     def setup(self):
         pass
 
-    def doExit(self):
+    def doExit(self, caller):
+        if test_log:
+            msg = f'{str(datetime.datetime.now())} - from {caller}, PacketReader, doExit()\n'
+            print(msg)
+            test_log.write(msg)
+
         if not self.is_parser:
             # This method will always join the Uart worker thread
             self.uart.close()
@@ -241,6 +263,8 @@ class PacketReader(Notifications.Notifier):
             return None
         else:
             packet = Packet(packetList)
+            # TRACE: 122
+
             if packet.valid:
                 self.handlePacketCompatibility(packet)
                 self.handlePacketHistory(packet)
@@ -325,7 +349,7 @@ class PacketReader(Notifications.Notifier):
 
 
 class Packet:
-    def __init__(self, packetList, is_parser=False, packet_reader=None, file_type=0):
+    def __init__(self, packetList, is_parser=False, packet_reader=None, file_type=0, packet_time_from_pcap=None):
         # By default, Packet is used for Sniffer packet generation. This code can be
         # re-used for pcapng file parsing.
         self.end_to_start = 0  # T_ifs
@@ -342,6 +366,7 @@ class Packet:
         self.bleHeaderLength = None
         self.is_parser = is_parser
         self.last_ble_packet = None
+        self.packet_time_from_pcap = packet_time_from_pcap
 
         try:
             if not packetList:
@@ -380,6 +405,10 @@ class Packet:
     def readPayload(self, packetList, file_type):
         global test_log
         global test_tifs_log
+        global phy_switch_state
+        global phy_switch_start
+        global phy_switch_end
+        global phy_switch_time
 
         self.blePacket = None
         self.OK = False
@@ -479,6 +508,29 @@ class Packet:
                                 self.packet_reader.detected_connection = True
                             elif packet_type != PACKET_TYPE_DATA:
                                 self.packet_reader.detected_connection = False
+
+                        #
+                        # Check PHY switch
+                        #
+                        if self.is_parser:
+                            if packet_type == PACKET_TYPE_DATA and self.blePacket.llid == 3:
+                                if len(self.blePacket.payload) == 6:  # Control Opcode, TX PHYs, RX PHYs, CRC
+                                    if self.blePacket.payload[0] == 0x16:  # LL_PHY_REQ
+                                        phy_switch_state = PHY_SW_ST_REQ
+                                        phy_switch_start = self.packet_time_from_pcap
+                                        payload = self.blePacket.payload.hex()
+                                        msg = f'LL_PHY_REQ: packet cnt: {self.packetCounter}, payload: {payload}, {phy_switch_start}'
+                                        print(msg)
+                                        test_log.write(f'{msg}\n')
+
+                            if phy_switch_state == PHY_SW_ST_REQ:
+                                if self.phy == PHY_2M:
+
+                                    phy_switch_state = PHY_SW_ST_DONE
+                                    phy_switch_end = self.packet_time_from_pcap
+                                    phy_switch_time = phy_switch_end - phy_switch_start
+                                    msg = f'PHY switch time: {phy_switch_time*1E3:.3f} ms'
+                                    print(f'{msg}\n')
 
                         #
                         # Check T_ifs

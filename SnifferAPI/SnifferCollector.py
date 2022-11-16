@@ -34,6 +34,7 @@
 # LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
 # OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import datetime
 from . import Packet, Exceptions, CaptureFiles, Devices, Notifications
 import time, sys, threading, subprocess, os, logging, copy
 from serial import SerialException
@@ -147,6 +148,7 @@ class SnifferCollector(Notifications.Notifier):
         self._appendPacket(packet)
 
         self.notify("NEW_BLE_PACKET", {"packet": packet})
+        # TRACE: 124, write the packet to pcap file
         self._captureHandler.writePacket(packet)
 
         self._nProcessedPackets += 1
@@ -178,7 +180,9 @@ class SnifferCollector(Notifications.Notifier):
         while not self._exit:
             try:
                 packet = self._packetReader.getPacket(timeout=12)
-                if packet == None or not packet.valid:
+                #TRACE: 123  # This is the real time captured packet.
+
+                if packet is None or not packet.valid:
                     raise Exceptions.InvalidPacketException("")
             except Exceptions.SnifferTimeout as e:
                 logging.info(str(e))
@@ -192,21 +196,24 @@ class SnifferCollector(Notifications.Notifier):
             else:
                 if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU:
                     self._processBLEPacket(packet)
+                    # TRACE 125.1
                 elif packet.id == EVENT_FOLLOW:
                     # This packet has no value for the user.
                     pass
                 elif packet.id == EVENT_CONNECT:
+                    # TRACE 125.2
                     self._connectEventPacketCounterValue = packet.packetCounter
                     self._inConnection = True
-                     # copy it because packets are eventually deleted
+                    # copy it because packets are eventually deleted
                     self._currentConnectRequest = copy.copy(self._findPacketByPacketCounter(self._connectEventPacketCounterValue-1))
                 elif packet.id == EVENT_DISCONNECT:
+                    # TRACE 125.3
                     if self._inConnection:
                         self._packetsInLastConnection = packet.packetCounter - self._connectEventPacketCounterValue
                         self._inConnection = False
                 elif packet.id == SWITCH_BAUD_RATE_RESP and self._switchingBaudRate:
                     self._switchingBaudRate = False
-                    if (packet.baudRate == self._proposedBaudRate):
+                    if packet.baudRate == self._proposedBaudRate:
                         self._packetReader.switchBaudRate(self._proposedBaudRate)
                     else:
                         self._switchBaudRate(packet.baudRate)
@@ -240,7 +247,7 @@ class SnifferCollector(Notifications.Notifier):
     def _findPacketByPacketCounter(self, packetCounterValue):
         with self._packetListLock:
             for i in range(-1, -1-len(self._packets), -1):
-            # iterate backwards through packets
+                # iterate backwards through packets
                 if self._packets[i].packetCounter == packetCounterValue:
                     return self._packets[i]
         return None
@@ -259,7 +266,7 @@ class SnifferCollector(Notifications.Notifier):
         self._exit = True
         self.notify("APP_EXIT")
         if self._packetReader:
-            self._packetReader.doExit()
+            self._packetReader.doExit("SnifferCollector, _doExit")
         # Clear method references to avoid uncollectable cyclic references
         self.clearCallbacks()
         self._devices.clearCallbacks()

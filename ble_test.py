@@ -39,13 +39,22 @@ indicate which DUT the commands would go to. The input command format is:
 "DUT_ID command_str", in which DUT_ID is 0-based.
 """
 
+from ble_auto_testing import convert_pcap_to_pcapng, get_args
+import datetime
 import io
-import os
-import select
+from nrf_sniffer_ble import run_sniffer as exe_sniffer
+from os.path import exists
+from SnifferAPI import Packet
+from pcapng_file_parser import parse_pcapng_file, all_tifs
+from queue import Queue
+import statistics
 import sys
 from terminal import Terminal
 import time
 import threading
+
+
+q = Queue()  # used to share data between threads
 
 
 class TeeTextIO(io.TextIOBase):
@@ -82,10 +91,10 @@ def start_main(all_thds, term_thd):
             for t in all_thds:
                 t.kill_received = True
 
-    print("Done!")
+    print(f"{datetime.datetime.now()} - All threads are terminated.")
 
 
-def start_threads():
+def start_threads(sp0, sp1):
     stdout = sys.stdout  # store it
     sys.stdout = TeeTextIO(sys.stdout)  # apply the TEE function
 
@@ -95,9 +104,9 @@ def start_threads():
     all_threads.append(terminal_thread)
 
     # prepare the BLE HCI consoles
-    params = {'serialPort': '/dev/ttyUSB1'}
+    params = {'serialPort': sp0}
     index = terminal_thread.add_hci_parser(params)
-    params['serialPort'] = '/dev/ttyUSB3'
+    params['serialPort'] = sp1
     index = terminal_thread.add_hci_parser(params)
 
     main_thread = threading.Thread(target=start_main, args=(all_threads, terminal_thread))
@@ -114,25 +123,25 @@ def start_threads():
     return terminal_thread
 
 
-def phy_timing_test(terminal_thd):
+def phy_timing_test(terminal_thd, addr1, addr2):
     """
 
     """
     print('\nStart PHY timing test.')
-    terminal_thd.input_cmd(0, "addr 00:11:22:33:44:11")
+
+    terminal_thd.input_cmd(0, "addr " + addr1)
     time.sleep(0.1)
-    terminal_thd.input_cmd(1, "addr 00:11:22:33:44:12")
+    terminal_thd.input_cmd(1, "addr " + addr2)
     time.sleep(0.1)
 
-    terminal_thd.input_cmd(0, "adv -l 2")
-    time.sleep(2)
+    terminal_thd.input_cmd(0, "adv -l 1")
+    time.sleep(3)
+
+    terminal_thd.input_cmd(1, "init -l 1 -s " + addr1)
+    time.sleep(3)
 
     terminal_thd.input_cmd(0, "phy 2")
-    time.sleep(0.1)
-    terminal_thd.input_cmd(0, "phy 1")
-    time.sleep(0.1)
-
-    time.sleep(2)
+    time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
     time.sleep(0.1)
@@ -141,11 +150,195 @@ def phy_timing_test(terminal_thd):
 
     terminal_thd.input = "exit"
 
-    print('Finish PHY timing test.\n')
+    print(f'{str(datetime.datetime.now())} - Finish PHY timing test.\n')
+
+
+def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int, queue: Queue) -> dict:
+    """Run the BLE packet sniffer on specified interface and device
+
+        Example command:
+        With a selected device name
+        --capture --extcap-interface COM4-None --device Periph --fifo FIFO
+            --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT --auto-test --timeout 10
+
+        With a selected device advertisings address
+        --capture --extcap-interface COM4-None --fifo FIFO
+            --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT
+            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20
+
+        No device selected:
+        --capture --extcap-interface COM4-None --fifo FIFO --extcap-control-out EXTCAP_CONTROL_OUT
+            --auto-test --timeout 10
+
+        Args:
+            interface_name: the nRF dongle interface name
+            device_name: the BLE device name
+            dev_adv_addr: the device advertising address in the BLE packet
+            timeout: how long the sniffer should run
+            captured_file: the saved captured file path
+
+        Returns:
+            None
+    """
+    params = dict()
+    params["capture"] = True
+    params["coded"] = False
+    params["extcap_interfaces"] = False
+    params["extcap_interface"] = interface_name
+    params["auto_test"] = True
+    params["device"] = device_name
+    params["baudrate"] = None
+    params["fifo"] = "FIFO"
+    params["extcap_control_in"] = "EXTCAP_CONTROL_IN"
+    params["extcap_control_out"] = "EXTCAP_CONTROL_OUT"
+    params["timeout"] = timeout
+    params["dev_addr"] = dev_adv_addr
+
+    print(f"{str(datetime.datetime.now())} - Sniffer started.")
+
+    captured_file = exe_sniffer(params)
+
+    queue.put(captured_file)
+    print(f'{str(datetime.datetime.now())} - Sniffer finished.')
+
+
+def run_phy_timing_test(args):
+    if args.interface is None:
+        interface = '/dev/ttyACM0-None'
+    else:
+        interface = args.interface
+
+    device = args.device
+
+    if args.brd0_addr is None:
+        brd0_addr = "00:11:22:33:44:11"
+    else:
+        brd0_addr = args.brd0_addr
+
+    if args.brd1_addr is None:
+        brd1_addr = "00:11:22:33:44:12"
+    else:
+        brd1_addr = args.brd1_addr
+
+    if args.time is None:
+        timeout = 30
+    else:
+        timeout = args.time
+
+    if args.sp0 is None:
+        sp0 = "/dev/ttyUSB0"
+    else:
+        sp0 = args.sp0
+
+    if args.sp1 is None:
+        sp1= "/dev/ttyUSB1"
+    else:
+        sp1 = args.sp1
+
+    term_thread = start_threads(sp0, sp1)
+
+    sniffer_thd = threading.Thread(target=run_sniffer, args=(interface, device, brd0_addr, timeout, q))
+    sniffer_thd.start()
+
+    phy_timing_test(term_thread, brd0_addr, brd1_addr)
+
+    sniffer_thd.join()  # wait the test to finish
+
+    if q.empty():  # check if there is captured file
+        return None
+    else:
+        pcap_file = q.get()
+        print(f'{str(datetime.datetime.now())} - Captured file: {pcap_file}')
+
+        if exists(pcap_file):
+            # Need to convert pcap file to pcapng format.
+            pcapng_file = pcap_file.replace(".pcap", ".pcapng")
+            # "C:\\Program Files\\Wireshark\\tshark.exe"
+            convert_pcap_to_pcapng(pcap_file, pcapng_file, "/usr/bin/tshark")
+
+            return pcapng_file
+
+
+def parse_phy_timing_test_results(captured_file: str):
+    file_type = 1  # see parse_pcapng_file() description
+    res = parse_pcapng_file(file_type, captured_file)
+    return res
+
+
+def check_results():
+    res = 0
+
+    #
+    # check T_IFS
+    #
+    if len(all_tifs) > 0:
+        max_tifs = max(all_tifs)
+        min_tifs = min(all_tifs)
+        avg = sum(all_tifs) / len(all_tifs)
+
+        print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}, '
+              f'median: {statistics.median(all_tifs)}')
+        if max_tifs <= 152 and min_tifs >= 148:
+            print("TIFS verification: PASS")
+            res = 0
+        else:
+            print("TIFS verification: FAIL")
+            res = 1
+    else:
+        print("No TIFS captured.")
+        res = 2
+
+    #
+    # check PHY switch time
+    #
+    if Packet.phy_switch_time is None:
+        print("phy_switch_time is None.")
+        res = 2
+    else:
+        if Packet.phy_switch_time > 60.0 / 1E3:  # ms
+            print(f'PHY switch time verification: FAIL')
+            res = 3
+        else:
+            print(f'PHY switch time verification: PASS')
+    return res
+
+
+def full_test(args, parse_captured_file):
+    if parse_captured_file:
+        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/venv/output/dev-ttyACM0-None__2022-11-15_10-55-04" \
+                        ".pcapng"
+    else:
+        # This test includes the connection, T_IFS, and PHY switch tests.
+        captured_file = run_phy_timing_test(args)
+
+    if exists(captured_file):
+        parse_phy_timing_test_results(captured_file)
+
+    res = check_results()
+
+    return res
+
 
 
 if __name__ == "__main__":
-    term_thread = start_threads()
+    parse_captured_file = False
+    args = get_args()
 
-    phy_timing_test(term_thread)
+    tried = 0
+    res = 0
+    while tried < 1:
+        res = full_test(args, parse_captured_file)
+
+        if res == 0:
+            break
+        else:
+            tried += 1
+
+        time.sleep(1)
+        print(f'Tried {tried} times.')
+
+    if res > 0:
+        exit(res)
+
+    print(f"\n{str(datetime.datetime.now())} - Done!")
 

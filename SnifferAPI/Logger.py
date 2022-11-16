@@ -58,7 +58,7 @@ if appdata:
 else:
     DEFAULT_LOG_FILE_DIR = "/tmp/logs"
 
-DEFAULT_LOG_FILE_NAME = "log.txt"
+DEFAULT_LOG_FILE_NAME = "sniffer_log.txt"
 
 logFileName = None
 logHandler = None

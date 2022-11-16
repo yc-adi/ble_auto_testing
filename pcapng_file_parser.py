@@ -14,22 +14,17 @@ import time
 from SnifferAPI.Packet import all_tifs
 import sys
 from pcapng import FileScanner
-from pprint import pprint
-
-parser_log_handler = None
-
-
-class BleSnifferPacketParser(object):
-    """Nordic BLE Sniffer Packet"""
-
-    def __init__(self, **kwargs):
-        self.parsed_packet = {}  # board, payload_len, protocol_ver, packet_counter
-        # packet_id, packet_len, flags,
-
+from SnifferAPI.Packet import test_log
 
 def parse_pcapng_file(file_type, file):
     """parse the saved pcapng file.
-    @see [python-pcapng wireshark 包解析](https://blog.csdn.net/weifengdq/article/details/117751828)
+        @see [python-pcapng wireshark 包解析](https://blog.csdn.net/weifengdq/article/details/117751828)
+
+        Args:
+            file_type:
+                0: Wireshark saved pcapng file
+                1: pcap file converted pcapng file
+            file: the saved sniffer pcapng file name with path
     """
     #
     # utilize the nRF sniffer code
@@ -58,17 +53,15 @@ def parse_pcapng_file(file_type, file):
                 # packet_data=b'\x07$\x00\x03@\x10\x02\n\x01%.\x00\x00\x000\x82\x01\xd6\xbe\x89\x8e\x00\x11\xd8R\x04
                 # \x80\x18\x00\x02\x01\x06\x07\tPeriphs5\xec' options=Options({})> print(f'{packet_ndx:>6}: {
                 # block.timestamp_high}, {block.timestamp_low}, {block.timestamp}')
-                block_time = datetime.utcfromtimestamp(block.timestamp).strftime("%Y-%m-%d %H:%M:%S.%f")
-                data = ' '.join(format(x, '02x') for x in block.packet_data)
-                # print(f'{packet_ndx:}: {block_time}, len: {block.packet_len}, data: {data}')
-
-                #if packet_ndx == 10:
-                #    print("break")
+                block_time = datetime.fromtimestamp(block.timestamp).strftime("%Y-%m-%d %H:%M:%S.%f")
+                # data = ' '.join(format(x, '02x') for x in block.packet_data)
+                #if test_log:
+                #    test_log.write(f'{packet_ndx:}: {block_time} ({block.timestamp}), len: {block.packet_len}\n')
 
                 try:
                     packet_list = block.packet_data[1:]
                     packet = Packet.Packet(packet_list, is_parser=True, packet_reader=packet_reader,
-                                           file_type=file_type)
+                                           file_type=file_type, packet_time_from_pcap=block.timestamp)
 
                     if packet.valid:
                         packet_reader.handlePacketCompatibility(packet)
@@ -117,9 +110,6 @@ def parse_pcapng_file(file_type, file):
                     packet_reader.handlePacketHistory(packet)  # Will save this packet as last packet
                 packet_ndx += 1
 
-            if packet_ndx > 10:
-                #break
-                pass
 
 
 if __name__ == "__main__":

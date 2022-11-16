@@ -82,7 +82,7 @@ def find_sniffer(write_data=False):
                 continue
             finally:
                 if reader is not None:
-                    reader.doExit()
+                    reader.doExit("find_sniffer()")
     return sniffers
 
 
@@ -104,7 +104,7 @@ def find_sniffer_baudrates(port, write_data=False):
                 pass
         finally:
             if reader is not None:
-                reader.doExit()
+                reader.doExit("find_sniffer_baudrates()")
     return None
 
 

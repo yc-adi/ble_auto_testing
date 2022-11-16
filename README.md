@@ -45,7 +45,12 @@ python -m ble-auto-testing --interface COM4-None --device "" --brd0-addr 00:11:2
 export SNIFFER=/dev/ttyACM1-None
 export BD0_UART3=/dev/ttyUSB0
 export BD1_UART3=/dev/ttyUSB1
-/home/ying-cai/Workspace/ble_auto_testing/venv/bin/python /home/ying-cai/Workspace/ble_auto_testing/ble_auto_testing.py --interface $SNIFFER --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $BD0_UART3 --sp1 $BD1_UART3 --time 30 --tshark /usr/bin/tshark
+/home/ying-cai/Workspace/ble_auto_testing/venv/bin/python /home/ying-cai/Workspace/ble_auto_testing/ble_test.py --interface $SNIFFER --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $BD0_UART3 --sp1 $BD1_UART3 --time 30 --tshark /usr/bin/tshark
+```
+
+Or:  
+```
+/home/ying-cai/Workspace/ble_auto_testing/venv/bin/python /home/ying-cai/Workspace/ble_auto_testing/ble_test.py --interface /dev/ttyACM0-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 /dev/ttyUSB0 --sp1 /dev/ttyUSB1 --time 30 --tshark /usr/bin/tshark 
 ```
 
 

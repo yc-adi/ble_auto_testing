@@ -240,7 +240,7 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
             None
     """
     cmd = f'{tshark} -F pcapng -r {pcap_file} -w {pcapng_file}'
-    print(f'Running: {cmd}')
+    print(f'{str(datetime.now())} - {cmd}')
 
     try:
         p = Popen(cmd, stdout=PIPE, shell=True)
@@ -271,8 +271,8 @@ def get_args():
     pcapng file, which can be used to analyze the BLE performance. 
     """
     parser = argparse.ArgumentParser(description=desc, formatter_class=RawTextHelpFormatter)
-    parser.add_argument('--interface', help='sniffer interface name like "COM4-None", "/dev/ttyUSB???"',
-                        default="COM4-None")
+    parser.add_argument('--interface', help='sniffer interface name like "COM4-None", "/dev/ttyACM0"',
+                        default="/dev/ttyACM0-None")
     parser.add_argument('--device', help='sniffer target device name', default="")
     parser.add_argument('--brd0-addr', help='DevKit board 0 advertising address', default="00:11:22:33:44:11")
     parser.add_argument('--brd1-addr', help='DevKit board 1 advertising address', default="00:11:22:33:44:12")
