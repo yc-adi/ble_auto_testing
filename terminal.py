@@ -110,8 +110,11 @@ class Terminal(threading.Thread):
                     continue
             else:
                 input_time_out = False
-                term_input = sys.stdin.readline().strip()
-                args = term_input.split()
+                try:
+                    term_input = sys.stdin.readline().strip()
+                    args = term_input.split()
+                except:
+                    break
 
             # Parse the input and execute the appropriate function
             try:
