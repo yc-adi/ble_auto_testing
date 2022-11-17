@@ -25,12 +25,12 @@ jobs:
             # Runs a set of commands using the runners shell
             - name: execute run.sh
               run: |
-              echo "GITHUB_WORKSPACE: "$GITHUB_WORKSPACE
-              cd $GITHUB_WORKSPACE
-              ls -hal
-              # Already in the root folder of the repo ble_auto_testing
-              bash -ex .github/workflows/run.sh
-              echo --- FINISHED ---
+                #echo "GITHUB_WORKSPACE: "$GITHUB_WORKSPACE
+                cd $GITHUB_WORKSPACE
+                ls -hal
+                # Already in the root folder of the repo ble_auto_testing
+                bash -ex .github/workflows/run.sh
+                echo --- FINISHED ---
                             
            
   
