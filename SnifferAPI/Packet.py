@@ -88,6 +88,14 @@ phy_switch_start = None
 phy_switch_end = None
 phy_switch_time = None
 
+# CONNECTION TIMING TEST STATE
+CONN_TIMING_ST_INIT = 0
+CONN_TIMING_ST_REQ = 1
+CONN_TIMING_ST_DONE = 2
+conn_timing_state = CONN_TIMING_ST_INIT
+conn_timing_start = None
+conn_timing_end = None
+conn_timing_time = None
 
 class PacketReader(Notifications.Notifier):
     def __init__(self, portnum=None, callbacks=[], baudrate=None, pcapng_parser=False):
@@ -409,6 +417,8 @@ class Packet:
         global phy_switch_start
         global phy_switch_end
         global phy_switch_time
+        global conn_timing_state
+        global conn_timing_time
 
         self.blePacket = None
         self.OK = False
@@ -508,6 +518,21 @@ class Packet:
                                 self.packet_reader.detected_connection = True
                             elif packet_type != PACKET_TYPE_DATA:
                                 self.packet_reader.detected_connection = False
+                                if conn_timing_state == CONN_TIMING_ST_DONE:
+                                    conn_timing_state = CONN_TIMING_ST_INIT
+
+                        #
+                        # check connection timing
+                        #
+                        if self.packet_reader.detected_connection and conn_timing_state == CONN_TIMING_ST_INIT:
+                            conn_timing_state = CONN_TIMING_ST_REQ
+                            msg = f'CONNECT_REQ: packet cnt: {self.packetCounter}'
+                            print(f'{msg}')
+                        elif conn_timing_state == CONN_TIMING_ST_REQ and packet_type == PACKET_TYPE_DATA:
+                            conn_timing_state = CONN_TIMING_ST_DONE
+                            conn_timing_time = self.end_to_start
+                            msg = f'CONNECTION DONE: packet cnt: {self.packetCounter}, time: {conn_timing_time}'
+                            print(f'{msg}\n')
 
                         #
                         # Check PHY switch
@@ -519,13 +544,13 @@ class Packet:
                                         phy_switch_state = PHY_SW_ST_REQ
                                         phy_switch_start = self.packet_time_from_pcap
                                         payload = self.blePacket.payload.hex()
-                                        msg = f'LL_PHY_REQ: packet cnt: {self.packetCounter}, payload: {payload}, {phy_switch_start}'
+                                        msg = f'LL_PHY_REQ: packet cnt: {self.packetCounter}, ' \
+                                              f'payload: {payload}, {phy_switch_start}'
                                         print(msg)
                                         test_log.write(f'{msg}\n')
 
                             if phy_switch_state == PHY_SW_ST_REQ:
                                 if self.phy == PHY_2M:
-
                                     phy_switch_state = PHY_SW_ST_DONE
                                     phy_switch_end = self.packet_time_from_pcap
                                     phy_switch_time = phy_switch_end - phy_switch_start
