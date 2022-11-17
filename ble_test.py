@@ -305,6 +305,20 @@ def check_results():
             res = 3
         else:
             print(f'PHY switch time verification: PASS')
+
+    #
+    # check connection timing
+    #
+    if Packet.conn_timing_time is None:
+        print("connection_timing_time is None.")
+        res = 2
+    else:
+        if Packet.conn_timing_time > 8800:  # 8750
+            print(f'Connection timing verification: FAIL')
+            res = 4
+        else:
+            print(f'Connection timing verification: PASS')
+
     return res
 
 
@@ -326,7 +340,7 @@ def full_test(args, parse_captured_file):
 
 
 if __name__ == "__main__":
-    parse_captured_file = False
+    parse_captured_file = True
     args = get_args()
 
     tried = 0
