@@ -26,7 +26,7 @@ jobs:
                 cd $GITHUB_WORKSPACE
                 ls -hal
                 # Already in the root folder of the repo ble_auto_testing
-                bash -ex .github/workflows/run.sh
+                bash -ex .github/workflows/run_all_timing.sh
                 echo --- FINISHED ---
                             
            
