@@ -54,7 +54,7 @@ class Terminal(threading.Thread):
         self.kill_received = False
         self.hci_parsers = []
         self.input = ""
-        
+
         self.daemon = True
 
     def add_hci_parser(self, params):
@@ -86,7 +86,7 @@ class Terminal(threading.Thread):
 
     def run(self):
         print(f'{self.name} starts to run.')
-
+        print(f'{sys.stdin}')
         err_id = 0
         input_time_out = False
         while not self.kill_received:
@@ -96,10 +96,18 @@ class Terminal(threading.Thread):
                 pass
             else:
                 #term_input, timed_out = timedInput(prompt=">>>", timeout=1)
-                print(">>>", end="")
+                #print(">>>", end="")
+                pass  # remove me !!!
             with_input, o, e = select.select([sys.stdin], [], [], 1)
 
-            if not with_input:
+            if with_input:
+                input_time_out = False
+                try:
+                    term_input = sys.stdin.readline().strip()
+                    args = term_input.split()
+                except:
+                    break                
+            else:
                 input_time_out = True
 
                 if self.input != "":
@@ -110,13 +118,6 @@ class Terminal(threading.Thread):
                     self.input = ""
                 else:
                     continue
-            else:
-                input_time_out = False
-                try:
-                    term_input = sys.stdin.readline().strip()
-                    args = term_input.split()
-                except:
-                    break
 
             # Parse the input and execute the appropriate function
             try:

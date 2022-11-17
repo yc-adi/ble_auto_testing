@@ -54,6 +54,8 @@ import time
 import threading
 
 
+RETRY_LIMIT = 3
+
 q = Queue()  # used to share data between threads
 
 
@@ -329,7 +331,7 @@ if __name__ == "__main__":
 
     tried = 0
     res = 0
-    while tried < 1:
+    while tried < RETRY_LIMIT:
         res = full_test(args, parse_captured_file)
 
         if res == 0:
