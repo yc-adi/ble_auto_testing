@@ -1,4 +1,4 @@
 psutil>=5.9.1
 pyserial >= 3.5
 python-pcapng >= 2.1.0
-
+pytimedinput>=2.0.1
