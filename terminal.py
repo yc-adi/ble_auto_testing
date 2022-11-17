@@ -96,8 +96,7 @@ class Terminal(threading.Thread):
                 pass
             else:
                 #term_input, timed_out = timedInput(prompt=">>>", timeout=1)
-                #print(">>>", end="")
-                pass  # remove me !!!
+                print(">>>", end="")
             with_input, o, e = select.select([sys.stdin], [], [], 1)
 
             if with_input:
