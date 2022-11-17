@@ -53,4 +53,4 @@ echo --- board 2 UART0: $devSerial_2
 export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | rev| cut -b 1-7| rev)"
 echo --- board 2 UART3: $devUart3Serial_2
 
-./venv/bin/python ./ble_test.py --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 30 --tshark /usr/bin/tshark
+./venv/bin/python ./ble_auto_testing.py --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 30 --tshark /usr/bin/tshark
