@@ -54,6 +54,8 @@ class Terminal(threading.Thread):
         self.kill_received = False
         self.hci_parsers = []
         self.input = ""
+        
+        self.daemon = True
 
     def add_hci_parser(self, params):
         """add a ble_hci_parser object

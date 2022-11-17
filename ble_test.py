@@ -110,6 +110,7 @@ def start_threads(sp0, sp1):
     index = terminal_thread.add_hci_parser(params)
 
     main_thread = threading.Thread(target=start_main, args=(all_threads, terminal_thread))
+    main_thread.daemon = True
     main_thread.start()
 
     # wait the terminal thread to start
@@ -239,6 +240,7 @@ def run_phy_timing_test(args):
     term_thread = start_threads(sp0, sp1)
 
     sniffer_thd = threading.Thread(target=run_sniffer, args=(interface, device, brd0_addr, timeout, q))
+    sniffer_thd.daemon = True
     sniffer_thd.start()
 
     phy_timing_test(term_thread, brd0_addr, brd1_addr)
