@@ -585,6 +585,11 @@ class Packet:
 
                                     all_tifs.append(self.end_to_start)
 
+                                    if self.end_to_start < 149 or self.end_to_start > 151:
+                                        msg = f'T_IFS FAIL! Packet counter: {self.packetCounter}, '\
+                                              f'{self.end_to_start}, {self.packet_time_from_pcap}'
+                                        print(f'{msg}')
+
                         if self.packet_reader is not None:
                             self.packet_reader.last_ble_packet = self.blePacket
 

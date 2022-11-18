@@ -324,7 +324,7 @@ def check_results():
 
 def full_test(args, parse_captured_file):
     if parse_captured_file:
-        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/venv/output/dev-ttyACM0-None__2022-11-15_10-55-04" \
+        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/output/dev-ttyACM0-None__2022-11-18_10-10-07" \
                         ".pcapng"
     else:
         # This test includes the connection, T_IFS, and PHY switch tests.
@@ -340,7 +340,7 @@ def full_test(args, parse_captured_file):
 
 
 if __name__ == "__main__":
-    parse_captured_file = True
+    parse_captured_file = False
     args = get_args()
 
     tried = 0

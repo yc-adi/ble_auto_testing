@@ -36,6 +36,7 @@
 import ble_hci_parser
 import datetime
 import os
+from pynput import keyboard
 import select
 import sys
 import time
@@ -45,6 +46,28 @@ ERR_EXIT = 1
 ERR_INVALID_DUT_ID = 2
 
 all_threads = []
+
+input_buffer = ""
+INPUT_STATE_EMPTY = 0
+INPUT_STATE_WITH_DATA = 1
+INPUT_STATE_DONE = 2
+input_state = INPUT_STATE_EMPTY
+
+
+def on_press(key):
+    global input_buffer, input_state
+
+    try:
+        input_buffer += key.char
+        input_state = INPUT_STATE_WITH_DATA
+    except:
+        if key == keyboard.Key.enter:
+            input_state = INPUT_STATE_DONE
+
+
+listener = keyboard.Listener(on_press=on_press)
+listener.deamon = True
+listener.start()
 
 
 class Terminal(threading.Thread):
@@ -85,28 +108,33 @@ class Terminal(threading.Thread):
             pass
 
     def run(self):
-        print(f'{self.name} starts to run.')
-        print(f'{sys.stdin}')
-        err_id = 0
-        input_time_out = False
-        while not self.kill_received:
-            # Get the terminal input
-            if input_time_out:
-                #term_input, timed_out = timedInput(prompt="", timeout=1)
-                pass
-            else:
-                #term_input, timed_out = timedInput(prompt=">>>", timeout=1)
-                print(">>>", end="")
-            with_input, o, e = select.select([sys.stdin], [], [], 1)
+        global input_state, input_buffer
 
-            if with_input:
-                input_time_out = False
-                try:
-                    term_input = sys.stdin.readline().strip()
-                    args = term_input.split()
-                except:
-                    break                
-            else:
+        print(f'{self.name} starts to run.')
+        err_id = 0
+        input_start_time = time.time()
+        input_time_out = False
+        
+        while not self.kill_received:
+            args = ""
+            
+            if not input_time_out:
+                print(">>>", end="")
+            
+            while time.time() - input_start_time < 1.0:                    
+                # Get the terminal input
+                if input_state == INPUT_STATE_DONE:
+                    input_time_out = False                
+
+                    args = input_buffer.split()
+
+                    input_buffer = ""
+                else:
+                    time.sleep(0.010)
+
+            if input_state == INPUT_STATE_DONE:
+                input_state = INPUT_STATE_EMPTY
+            elif input_state == INPUT_STATE_EMPTY:
                 input_time_out = True
 
                 if self.input != "":
@@ -115,14 +143,13 @@ class Terminal(threading.Thread):
                     args = self.input.split()
 
                     self.input = ""
-                else:
-                    continue
 
             # Parse the input and execute the appropriate function
             try:
                 # print(f'{args}')
 
                 if len(args) == 0:
+                    input_start_time = time.time()
                     continue
 
                 if args[0] == 'exit':
