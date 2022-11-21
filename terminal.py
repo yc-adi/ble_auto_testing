@@ -173,7 +173,7 @@ class Terminal(threading.Thread):
             except AttributeError:
                 continue
 
-        curses.nocbreak()
+        #curses.nocbreak()
         screen.keypad(0)
         curses.echo()
         curses.endwin()
