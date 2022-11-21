@@ -764,7 +764,13 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                                   f'totally {last_parsed_packet_time - start_time:.0f} secs.'
                             logging.info(msg)
                             print(f'{str(datetime.datetime.now())} - {msg}')
-                            break
+
+                            if final_check is None:
+                                final_check = time.time()
+                            if time.time() - final_check > 5.0:
+                                break
+                            else:
+                                time.sleep(1)
                     else:
                         curr = time.time()
                         delta_secs = curr - start_time
