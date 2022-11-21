@@ -57,7 +57,7 @@ screen = curses.initscr()  # get the curses screen window
 screen.nodelay(1)  # non-blocking for getch
 screen.scrollok(1)
 #curses.noecho()  # turn off input echoing
-curses.cbreak()  # respond to keys immediately (don't wait for enter)
+#curses.cbreak()  # respond to keys immediately (don't wait for enter)
 screen.keypad(True)  # map arrow keys to special values
 
 
