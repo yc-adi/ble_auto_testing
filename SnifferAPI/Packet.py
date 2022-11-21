@@ -524,15 +524,16 @@ class Packet:
                         #
                         # check connection timing
                         #
-                        if self.packet_reader.detected_connection and conn_timing_state == CONN_TIMING_ST_INIT:
-                            conn_timing_state = CONN_TIMING_ST_REQ
-                            msg = f'CONNECT_REQ: packet cnt: {self.packetCounter}'
-                            print(f'{msg}')
-                        elif conn_timing_state == CONN_TIMING_ST_REQ and packet_type == PACKET_TYPE_DATA:
-                            conn_timing_state = CONN_TIMING_ST_DONE
-                            conn_timing_time = self.end_to_start
-                            msg = f'CONNECTION DONE: packet cnt: {self.packetCounter}, time: {conn_timing_time}'
-                            print(f'{msg}\n')
+                        if self.packet_reader is not None:
+                            if self.packet_reader.detected_connection and conn_timing_state == CONN_TIMING_ST_INIT:
+                                conn_timing_state = CONN_TIMING_ST_REQ
+                                msg = f'CONNECT_REQ: packet cnt: {self.packetCounter}'
+                                print(f'{msg}')
+                            elif conn_timing_state == CONN_TIMING_ST_REQ and packet_type == PACKET_TYPE_DATA:
+                                conn_timing_state = CONN_TIMING_ST_DONE
+                                conn_timing_time = self.end_to_start
+                                msg = f'CONNECTION DONE: packet cnt: {self.packetCounter}, time: {conn_timing_time}'
+                                print(f'{msg}\n')
 
                         #
                         # Check PHY switch

@@ -42,7 +42,7 @@ indicate which DUT the commands would go to. The input command format is:
 from ble_auto_testing import convert_pcap_to_pcapng, get_args
 import datetime
 import io
-from nrf_sniffer_ble import run_sniffer as exe_sniffer
+from nrf_sniffer_ble import capture_write, run_sniffer as exe_sniffer
 from os.path import exists
 from SnifferAPI import Packet
 from pcapng_file_parser import parse_pcapng_file, all_tifs
@@ -138,14 +138,14 @@ def phy_timing_test(terminal_thd, addr1, addr2):
     time.sleep(0.1)
 
     terminal_thd.input_cmd(0, "adv -l 1")
-    time.sleep(3)
+    #time.sleep(3)
 
     terminal_thd.input_cmd(1, "init -l 1 " + addr1)
     time.sleep(3)
 
     #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
     terminal_thd.input_cmd(1, "phy 2")  # the PHY switching time is about 67.5 ms.
-    time.sleep(3)
+    #time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
     time.sleep(0.1)
@@ -329,11 +329,15 @@ def full_test(args, parse_captured_file):
     else:
         # This test includes the connection, T_IFS, and PHY switch tests.
         captured_file = run_phy_timing_test(args)
+        print(f'{captured_file}')
 
-    if exists(captured_file):
-        parse_phy_timing_test_results(captured_file)
+    if captured_file is not None:
+        if exists(captured_file):
+            parse_phy_timing_test_results(captured_file)
 
-    res = check_results()
+        res = check_results()
+    else:
+        res = 2
 
     return res
 

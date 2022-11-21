@@ -767,7 +767,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
                             if final_check is None:
                                 final_check = time.time()
-                            if time.time() - final_check > 5.0:
+                            elif time.time() - final_check > 5.0:
                                 break
                             else:
                                 time.sleep(1)
