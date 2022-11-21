@@ -6,6 +6,7 @@ echo "# .github/workflows/run.sh                          #"
 echo "#####################################################"
 echo 
 
+set -x
 set -e
 set -o pipefail
 
