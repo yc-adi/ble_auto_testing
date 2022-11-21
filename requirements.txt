@@ -1,8 +1,4 @@
-evdev==1.6.0
 psutil==5.9.1
-pynput==1.7.6
 pyserial==3.5
 python-pcapng==2.1.1
-python-xlib==0.32
-pytimedinput==2.0.1
-six==1.16.0
+
