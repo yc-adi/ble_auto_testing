@@ -1,4 +1,5 @@
 #! /usr/bin/env python3
+import atexit
 
 ################################################################################
 # Copyright (C) 2022 Analog Devices, Inc., All Rights Reserved.
@@ -36,10 +37,10 @@
 import ble_hci_parser
 import datetime
 import os
-import curses
 import select
 import sys
 import time
+import termios
 import threading
 
 ERR_EXIT = 1
@@ -53,12 +54,33 @@ INPUT_STATE_WITH_DATA = 1
 INPUT_STATE_DONE = 2
 input_state = INPUT_STATE_EMPTY
 
-screen = curses.initscr()  # get the curses screen window
-screen.nodelay(1)  # non-blocking for getch
-screen.scrollok(1)
-#curses.noecho()  # turn off input echoing
-#curses.cbreak()  # respond to keys immediately (don't wait for enter)
-screen.keypad(True)  # map arrow keys to special values
+old_settings=None
+
+
+def init_any_key():
+    global old_settings
+    old_settings = termios.tcgetattr(sys.stdin)
+    new_settings = termios.tcgetattr(sys.stdin)
+    new_settings[3] = new_settings[3] & ~(termios.ECHO | termios.ICANON) # lflags
+    new_settings[6][termios.VMIN] = 0  # cc
+    new_settings[6][termios.VTIME] = 0 # cc
+    termios.tcsetattr(sys.stdin, termios.TCSADRAIN, new_settings)
+
+
+@atexit.register
+def term_any_key():
+    global old_settings
+    if old_settings:
+        termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+
+
+def any_key():
+    ch_get = []
+    ch = os.read(sys.stdin.fileno(), 1)
+    while ch is not None and len(ch) > 0:
+        ch_get.append( chr(ch[0]) )
+        ch = os.read(sys.stdin.fileno(), 1)
+    return ch_get
 
 
 class Terminal(threading.Thread):
@@ -114,14 +136,14 @@ class Terminal(threading.Thread):
             
             while time.time() - input_start_time < 1.0:                    
                 # Get the terminal input
-                c = screen.getch()
-                if c != -1:
-                    if c == curses.KEY_ENTER:
+                c = any_key()
+                if len(c) > 0:
+                    if c == '\n':
                         input_state = INPUT_STATE_DONE
                         args = input_buffer.split()
                         input_buffer = ""
                     else:
-                        input_buffer += chr(c)
+                        input_buffer += c[0]
                         input_state = INPUT_STATE_WITH_DATA
                     
                     input_time_out = False
@@ -172,11 +194,6 @@ class Terminal(threading.Thread):
 
             except AttributeError:
                 continue
-
-        #curses.nocbreak()
-        screen.keypad(0)
-        curses.echo()
-        curses.endwin()
 
         if err_id == ERR_EXIT:
             print(f'{str(datetime.datetime.now())} - Exited by command exit.')
