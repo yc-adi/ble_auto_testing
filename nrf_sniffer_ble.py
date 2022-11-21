@@ -728,7 +728,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         delta_secs = curr - start_time
                         if delta_secs > timeout and not operation_timeout:
                             msg = f'Try to end by op time, start: {time.ctime(start_time)}, '\
-                                  f'totally {delta_secs:.0f} secs.'
+                                  f'totally {delta_secs:.0f} secs, {last_parsed_packet_time}.'
                             logging.info(msg)
                             print(f'{str(datetime.datetime.now())} - {msg}')
 
@@ -742,14 +742,14 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         if operation_timeout:
                             time.sleep(1)
                             if last_packet_time_after_timeout == last_parsed_packet_time:
-                                msg = f'End by no more saved packets, {time.ctime(curr)}, ' \
+                                msg = f'End by no more saved packets, {last_parsed_packet_time}, ' \
                                       f'totally {delta_secs:.0f} secs.'
                                 logging.info(msg)
                                 print(f'{str(datetime.datetime.now())} - {msg}')
                                 break
                             else:
                                 curr = time.time()
-                                if curr - last_check_time > 1.0:  # check every 1 sec
+                                if curr - last_check_time > 2.0:  # check every 1 sec
                                     last_check_time = curr
                                     print(f'{str(datetime.datetime.now())} - {last_parsed_packet_time}, '
                                           f'{last_packet_time_after_timeout}, {time.ctime(last_parsed_packet_time)}')
