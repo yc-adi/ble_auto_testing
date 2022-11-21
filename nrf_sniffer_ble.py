@@ -737,6 +737,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
                             time.sleep(1)
 
+                            final_check = time.time()
                             last_check_time = time.time()
 
                         if operation_timeout:
@@ -746,7 +747,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                                       f'totally {delta_secs:.0f} secs.'
                                 logging.info(msg)
                                 print(f'{str(datetime.datetime.now())} - {msg}')
-                                break
+
+                                if time.time() - final_check > 5.0:
+                                    break
                             else:
                                 curr = time.time()
                                 if curr - last_check_time > 2.0:  # check every 1 sec
