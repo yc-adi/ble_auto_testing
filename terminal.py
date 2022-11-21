@@ -36,7 +36,7 @@
 import ble_hci_parser
 import datetime
 import os
-from pynput import keyboard
+import curses
 import select
 import sys
 import time
@@ -53,21 +53,12 @@ INPUT_STATE_WITH_DATA = 1
 INPUT_STATE_DONE = 2
 input_state = INPUT_STATE_EMPTY
 
-
-def on_press(key):
-    global input_buffer, input_state
-
-    try:
-        input_buffer += key.char
-        input_state = INPUT_STATE_WITH_DATA
-    except:
-        if key == keyboard.Key.enter:
-            input_state = INPUT_STATE_DONE
-
-
-listener = keyboard.Listener(on_press=on_press)
-listener.deamon = True
-listener.start()
+screen = curses.initscr()  # get the curses screen window
+screen.nodelay(1)  # non-blocking for getch
+screen.scrollok(1)
+#curses.noecho()  # turn off input echoing
+curses.cbreak()  # respond to keys immediately (don't wait for enter)
+screen.keypad(True)  # map arrow keys to special values
 
 
 class Terminal(threading.Thread):
@@ -123,19 +114,23 @@ class Terminal(threading.Thread):
             
             while time.time() - input_start_time < 1.0:                    
                 # Get the terminal input
-                if input_state == INPUT_STATE_DONE:
-                    input_time_out = False                
+                c = screen.getch()
+                if c != -1:
+                    if c == curses.KEY_ENTER:
+                        input_state = INPUT_STATE_DONE
+                        args = input_buffer.split()
+                        input_buffer = ""
+                    else:
+                        input_buffer += chr(c)
+                        input_state = INPUT_STATE_WITH_DATA
+                    
+                    input_time_out = False
+                                    
+                    break
 
-                    args = input_buffer.split()
-
-                    input_buffer = ""
-                else:
-                    time.sleep(0.010)
-
-            if input_state == INPUT_STATE_DONE:
-                input_state = INPUT_STATE_EMPTY
-            elif input_state == INPUT_STATE_EMPTY:
-                input_time_out = True
+                
+            if input_state == INPUT_STATE_EMPTY:
+                input_time_out = True       
 
                 if self.input != "":
                     print(f'{str(datetime.datetime.now())} - INPUT: {self.input}')
@@ -177,6 +172,11 @@ class Terminal(threading.Thread):
 
             except AttributeError:
                 continue
+
+        curses.nocbreak()
+        screen.keypad(0)
+        curses.echo()
+        curses.endwin()
 
         if err_id == ERR_EXIT:
             print(f'{str(datetime.datetime.now())} - Exited by command exit.')
