@@ -38,6 +38,12 @@ else  # wall-e
     DevKitUart3Sn_2="DT03OFQ0"
 fi
 
+echo TERM: $TERM
+echo TERMINFO: $TERMINFO
+
+#export TERM=linux
+#export TERMINFO=/etc/terminfo
+
 export snifferSerial=/dev/"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | rev | cut -b 1-7 | rev)"
 echo --- sniffer: $snifferSerial
 
