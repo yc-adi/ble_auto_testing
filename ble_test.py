@@ -275,7 +275,8 @@ def parse_phy_timing_test_results(captured_file: str):
     return res
 
 
-def check_results():
+def check_results(new_phy):
+    phy_cmd = ["1M", "2M", "S8", "S2"]
     res = 0
 
     #
@@ -306,10 +307,10 @@ def check_results():
         res = 2
     else:
         if Packet.phy_switch_time > 70.0 / 1E3:  # ms
-            print(f'PHY switch time verification: FAIL')
+            print(f'PHY switch time verification ({phy_cmd[new_phy - 1]}): FAIL')
             res = 3
         else:
-            print(f'PHY switch time verification: PASS')
+            print(f'PHY switch time verification ({phy_cmd[new_phy - 1]}): PASS')
 
     #
     # check connection timing
@@ -340,7 +341,7 @@ def full_test(args, parse_captured_file, new_phy):
         if exists(captured_file):
             parse_phy_timing_test_results(captured_file)
 
-        res = check_results()
+        res = check_results(new_phy)
     else:
         res = 2
 

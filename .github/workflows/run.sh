@@ -30,21 +30,38 @@ then
     DevKitUart3Sn_1="DT03OFRJ"
     DevKitUart3Sn_2="DT03NSU1"    
 else  # wall-e
-    #sniffer_sn="000680435664"
-    sniffer_sn="47F745082791B043"
-    jtag_sn_1=04091702d4f18ac600000000000000000000000097969906
-    jtag_sn_2=04091702f7f18a2900000000000000000000000097969906
-    DevKitUart0Sn_1="D309ZDFB"
-    DevKitUart0Sn_2="D3073ICQ"
-    DevKitUart3Sn_1="DT03O9WB"
-    DevKitUart3Sn_2="DT03OFQ0"
+    FILE=/home/btm-ci/Workspace/Resource_Share/boards_config.json
+
+    if [ -f "$FILE" ]; then
+        sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['sniffer']['sn'])"`
+        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
+        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
+        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
+        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart0'])"`
+        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
+        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart3'])"`
+    else
+        sniffer_sn="47F745082791B043"
+        jtag_sn_1=04091702d4f18ac600000000000000000000000097969906
+        jtag_sn_2=04091702f7f18a2900000000000000000000000097969906
+        DevKitUart0Sn_1="D309ZDFB"
+        DevKitUart0Sn_2="D3073ICQ"
+        DevKitUart3Sn_1="DT03O9WB"
+        DevKitUart3Sn_2="DT03OFQ0"
+    fi
 fi
+
+echo sniffer_sn: $sniffer_sn
+echo jtag_sn_1: $jtag_sn_1
+echo jtag_sn_2: $jtag_sn_2
+echo DevKitUart0Sn_1: $DevKitUart0Sn_1
+echo DevKitUart0Sn_2: $DevKitUart0Sn_2
+echo DevKitUart3Sn_1: $DevKitUart3Sn_1
+echo DevKitUart3Sn_2: $DevKitUart3Sn_2
+echo
 
 echo TERM: $TERM
 echo TERMINFO: $TERMINFO
-
-#export TERM=linux
-#export TERMINFO=/etc/terminfo
 
 export snifferSerial=/dev/"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | rev | cut -b 1-7 | rev)"
 echo --- sniffer: $snifferSerial
