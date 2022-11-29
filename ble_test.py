@@ -126,11 +126,16 @@ def start_threads(sp0, sp1):
     return terminal_thread
 
 
-def phy_timing_test(terminal_thd, addr1, addr2):
+def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     """
 
     """
-    print('\nStart PHY timing test.')
+    phy_cmd = ["1M", "2M", "S8", "S2"]
+
+    if new_phy < 2 or new_phy > 4:
+        new_phy = 2
+        print(f'{new_phy} is invalid new phy. Changed to 2 (2M).')
+    print(f'\nStart PHY timing test ({phy_cmd[new_phy - 1]}).')
 
     terminal_thd.input_cmd(0, "addr " + addr1)
     time.sleep(0.1)
@@ -144,7 +149,7 @@ def phy_timing_test(terminal_thd, addr1, addr2):
     time.sleep(3)
 
     #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
-    terminal_thd.input_cmd(1, "phy 2")  # the PHY switching time is about 67.5 ms.
+    terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
     #time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
@@ -154,7 +159,7 @@ def phy_timing_test(terminal_thd, addr1, addr2):
 
     terminal_thd.input = "exit"
 
-    print(f'{str(datetime.datetime.now())} - Finish PHY timing test.\n')
+    print(f'{str(datetime.datetime.now())} - Finish PHY timing test ({phy_cmd[new_phy - 1]}).\n')
 
 
 def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int, queue: Queue) -> dict:
@@ -206,7 +211,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     print(f'{str(datetime.datetime.now())} - Sniffer finished.')
 
 
-def run_phy_timing_test(args):
+def run_phy_timing_test(args, new_phy):
     if args.interface is None:
         interface = '/dev/ttyACM0-None'
     else:
@@ -245,7 +250,7 @@ def run_phy_timing_test(args):
     sniffer_thd.daemon = True
     sniffer_thd.start()
 
-    phy_timing_test(term_thread, brd0_addr, brd1_addr)
+    phy_timing_test(term_thread, brd0_addr, brd1_addr, new_phy)
 
     sniffer_thd.join()  # wait the test to finish
 
@@ -322,13 +327,13 @@ def check_results():
     return res
 
 
-def full_test(args, parse_captured_file):
+def full_test(args, parse_captured_file, new_phy):
     if parse_captured_file:
         captured_file = "/home/ying-cai/Workspace/ble_auto_testing/output/dev-ttyACM0-None__2022-11-18_10-10-07" \
                         ".pcapng"
     else:
         # This test includes the connection, T_IFS, and PHY switch tests.
-        captured_file = run_phy_timing_test(args)
+        captured_file = run_phy_timing_test(args, new_phy)
         print(f'{captured_file}')
 
     if captured_file is not None:
@@ -347,21 +352,22 @@ if __name__ == "__main__":
     parse_captured_file = False
     args = get_args()
 
-    tried = 0
-    res = 0
-    while tried < RETRY_LIMIT:
-        res = full_test(args, parse_captured_file)
+    for new_phy in range(2, 5):  # 2 (2M), 3 (S8), 4 (S2)
+        tried = 0
+        res = 0
+        while tried < RETRY_LIMIT:
+            res = full_test(args, parse_captured_file, new_phy)
 
-        if res == 0:
-            break
-        else:
-            tried += 1
+            if res == 0:
+                break
+            else:
+                tried += 1
 
-        time.sleep(1)
-        print(f'Tried {tried} times.')
+            time.sleep(1)
+            print(f'Tried {tried} times.')
 
-    if res > 0:
-        exit(res)
+        if res > 0:
+            exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")
 
