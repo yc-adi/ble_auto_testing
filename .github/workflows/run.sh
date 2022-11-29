@@ -22,7 +22,7 @@ python -m pip install -r requirements.txt
 # Note: index of the two DevKit boards are 1-based.
 if [ `hostname` == "yingcai-OptiPlex-790" ]
 then
-    sniffer_sn="47F745082791B043"
+    sniffer_sn="C7526B63B7BD5962"  # nRF52840-DK
     jtag_sn_1=0444170169c5c14600000000000000000000000097969906
     jtag_sn_2=044417016bd8439a00000000000000000000000097969906
     DevKitUart0Sn_1="D3073IDG"
