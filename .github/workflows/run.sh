@@ -2,33 +2,78 @@
 
 echo "#####################################################"
 echo "# The working folder is the root of this repo.      #"
-echo "# .github/workflows/run.sh                          #"
+echo "# .github/workflows/run.sh 2nd_board_type           #"
 echo "#####################################################"
-echo 
+echo
 
-set -x
-set -e
-set -o pipefail
+ERR_INVALID_2ND_BRD_TYPE=1
+
+if [ $# != 1 ]; then
+    SEC_BRD_TYPE=1
+    echo "The 2nd board is MAX32655 by default."
+else
+    SEC_BRD_TYPE=$1
+    case $SEC_BRD_TYPE in
+        1)
+            echo "The 2nd board is MAX32655."
+        ;;
+
+        2)
+            echo "The 2nd board is MAX32665."
+        ;;
+
+        3)
+            echo "The 2nd board is MAX32690."
+        ;;
+
+        *)
+            echo "Invalid 2nd board type. 1: MAX32655, 2: MAX32665, 3: MAX32690."
+            exit $ERR_INVALID_2ND_BRD_TYPE
+        ;;
+    esac
+fi
 
 echo "--- in run.sh"
-echo "--- PWD: "$PWD
-echo "--- ls -hal"
+echo "--- PWD: $PWD"
 ls -hal
+
+#set -x
+set -e
+set -o pipefail
 
 python -m venv venv
 source ./venv/bin/activate
 python -m pip install -r requirements.txt
 
 # Note: index of the two DevKit boards are 1-based.
-if [ `hostname` == "yingcai-OptiPlex-790" ]
-then
-    sniffer_sn="C7526B63B7BD5962"  # nRF52840-DK
+if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+    sniffer_sn="C7526B63B7BD5962"
     jtag_sn_1=0444170169c5c14600000000000000000000000097969906
     jtag_sn_2=044417016bd8439a00000000000000000000000097969906
+    
     DevKitUart0Sn_1="D3073IDG"
     DevKitUart0Sn_2="D309ZDE9"
     DevKitUart3Sn_1="DT03OFRJ"
-    DevKitUart3Sn_2="DT03NSU1"    
+    DevKitUart3Sn_2="DT03NSU1"
+
+    # MAX32665
+    # usb-ARM_DAPLink_CMSIS-DAP_0409000069f9823300000000000000000000000097969906-if01
+    max32665_daplink=0409000069f9823300000000000000000000000097969906
+    # CN2 - UART1
+    # usb-FTDI_FT230X_Basic_UART_D30A1X9V-if00-port0
+    max32665_cn2_uart1="D30A1X9V"
+    # usb-FTDI_FT230X_Basic_UART_DT03OEFO-if00-port0
+    max32665_uart0="DT03OEFO"
+
+    # MAX32690
+    # 
+    max32690_daplink=
+    # CN2 - UART1
+    #
+    max32690_cn2_uart1=""
+    #
+    max32690_uart0=""
+   
 else  # wall-e
     FILE=/home/btm-ci/Workspace/Resource_Share/boards_config.json
 
@@ -51,32 +96,50 @@ else  # wall-e
     fi
 fi
 
-echo sniffer_sn: $sniffer_sn
-echo jtag_sn_1: $jtag_sn_1
-echo jtag_sn_2: $jtag_sn_2
-echo DevKitUart0Sn_1: $DevKitUart0Sn_1
-echo DevKitUart0Sn_2: $DevKitUart0Sn_2
-echo DevKitUart3Sn_1: $DevKitUart3Sn_1
-echo DevKitUart3Sn_2: $DevKitUart3Sn_2
+echo "        sniffer_sn: $sniffer_sn"
 echo
+echo "         jtag_sn_1: $jtag_sn_1"
+echo "   DevKitUart0Sn_1: $DevKitUart0Sn_1"
+echo "   DevKitUart0Sn_2: $DevKitUart0Sn_2"
+echo
+echo "         jtag_sn_2: $jtag_sn_2"
+echo "   DevKitUart3Sn_1: $DevKitUart3Sn_1"
+echo "   DevKitUart3Sn_2: $DevKitUart3Sn_2"
+echo
+echo "  max32665_daplink: $max32665_daplink"
+echo "max32665_cn2_uart1: $max32665_cn2_uart1"
+echo "    max32665_uart0: $max32665_uart0"
 
 echo TERM: $TERM
 echo TERMINFO: $TERMINFO
 
 export snifferSerial=/dev/"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | rev | cut -b 1-7 | rev)"
-echo --- sniffer: $snifferSerial
 
 export devSerial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | rev | cut -b 1-7 | rev)"
-echo --- board 1 UART0: $devSerial_1
-
 export devUart3Serial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | rev | cut -b 1-7 | rev)"
-echo --- board 1 UART3: $devUart3Serial_1
 
-export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | rev| cut -b 1-7| rev)"
-echo --- board 2 UART0: $devSerial_2
+case $SEC_BRD_TYPE in
+    1)
+        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | rev| cut -b 1-7| rev)"
+        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | rev| cut -b 1-7| rev)"
+    ;;
+    2)
+        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_cn2_uart1 | rev| cut -b 1-7| rev)"
+        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | rev| cut -b 1-7| rev)"
+    ;;
+    3)
+        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart1 | rev| cut -b 1-7| rev)"
+        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_uart0 | rev| cut -b 1-7| rev)"
+    ;;
+esac
 
-export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | rev| cut -b 1-7| rev)"
-echo --- board 2 UART3: $devUart3Serial_2
+echo "sniffer: $snifferSerial"
+echo
+echo "board 1 trace port: $devSerial_1"
+echo "board 1 HCI port: $devUart3Serial_1"
+echo 
+echo "board 2 trace port: $devSerial_2"
+echo "board 2 HCI port: $devUart3Serial_2"
+echo 
 
-#./venv/bin/python ./ble_auto_testing.py --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 35 --tshark /usr/bin/tshark
 ./venv/bin/python  ./ble_test.py         --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 35 --tshark /usr/bin/tshark
