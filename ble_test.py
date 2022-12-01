@@ -289,11 +289,13 @@ def check_results(new_phy):
 
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}, '
               f'median: {statistics.median(all_tifs)}')
+    
+        print("\n\n-------------------------------------------------------------------")
         if max_tifs <= 152 and min_tifs >= 148:
-            print("TIFS verification: PASS")
+            print("                TIFS verification: PASS")
             res = 0
         else:
-            print("TIFS verification: FAIL")
+            print("                TIFS verification: FAIL")
             res = 1
     else:
         print("No TIFS captured.")
@@ -320,10 +322,12 @@ def check_results(new_phy):
         res = 2
     else:
         if Packet.conn_timing_time > 8800:  # 8750
-            print(f'Connection timing verification: FAIL')
+            print(f'   Connection timing verification: FAIL')
             res = 4
         else:
-            print(f'Connection timing verification: PASS')
+            print(f'   Connection timing verification: PASS')
+
+    print("-------------------------------------------------------------------\n\n")
 
     return res
 

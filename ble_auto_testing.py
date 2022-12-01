@@ -216,10 +216,10 @@ def run_parser(file_type: int, pcapng_file: str) -> int:
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}, '
               f'median: {statistics.median(all_tifs)}')
         if max_tifs <= 152 and min_tifs >= 148:
-            print("TIFS verification: PASS")
+            print( "                TIFS verification: PASS")
             res = 0
         else:
-            print("TIFS verification: FAIL")
+            print("                 TIFS verification: FAIL")
             res = 1
     else:
         print("No TIFS captured.")

@@ -46,50 +46,56 @@ source ./venv/bin/activate
 python -m pip install -r requirements.txt
 
 # Note: index of the two DevKit boards are 1-based.
-if [ `hostname` == "yingcai-OptiPlex-790" ]; then
-    sniffer_sn="C7526B63B7BD5962"
-    jtag_sn_1=0444170169c5c14600000000000000000000000097969906
-    jtag_sn_2=044417016bd8439a00000000000000000000000097969906
+echo
+
+FILE=/home/$USER/Workspace/Resource_Share/boards_config.json
+if [ -f "$FILE" ]; then
+    sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['sniffer']['sn'])"`
     
-    DevKitUart0Sn_1="D3073IDG"
-    DevKitUart0Sn_2="D309ZDE9"
-    DevKitUart3Sn_1="DT03OFRJ"
-    DevKitUart3Sn_2="DT03NSU1"
+    jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
+    jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
+    DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
+    DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart0'])"`
+    DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
+    DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart3'])"`
 
-    # MAX32665
-    # usb-ARM_DAPLink_CMSIS-DAP_0409000069f9823300000000000000000000000097969906-if01
-    max32665_daplink=0409000069f9823300000000000000000000000097969906
-    # CN2 - UART1
-    # usb-FTDI_FT230X_Basic_UART_D30A1X9V-if00-port0
-    max32665_cn2_uart1="D30A1X9V"
-    # usb-FTDI_FT230X_Basic_UART_DT03OEFO-if00-port0
-    max32665_uart0="DT03OEFO"
+    max32665_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
+    max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
+    max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
 
-    # MAX32690
-    # 
-    max32690_daplink=
-    # CN2 - UART1
-    #
-    max32690_cn2_uart1=""
-    #
-    max32690_uart0=""
-   
-else  # wall-e
-    FILE=/home/btm-ci/Workspace/Resource_Share/boards_config.json
+    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['daplink'])"`
+    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart2'])"`
+    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart3'])"`
+else
+    if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+        sniffer_sn="C7526B63B7BD5962"
+        jtag_sn_1=0444170169c5c14600000000000000000000000097969906
+        jtag_sn_2=044417016bd8439a00000000000000000000000097969906
+        
+        DevKitUart0Sn_1="D3073IDG"
+        DevKitUart0Sn_2="D309ZDE9"
+        DevKitUart3Sn_1="DT03OFRJ"
+        DevKitUart3Sn_2="DT03NSU1"
 
-    if [ -f "$FILE" ]; then
-        sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['sniffer']['sn'])"`
-        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
-        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
-        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
-        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
-        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
-        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart3'])"`
+        # MAX32665
+        # usb-ARM_DAPLink_CMSIS-DAP_0409000069f9823300000000000000000000000097969906-if01
+        max32665_daplink=0409000069f9823300000000000000000000000097969906
+        # CN2 - UART1
+        # usb-FTDI_FT230X_Basic_UART_D30A1X9V-if00-port0
+        max32665_cn2_uart1="D30AKVTH"
+        # usb-FTDI_FT230X_Basic_UART_DT03OEFO-if00-port0
+        max32665_uart0="DT03OEFO"
 
-        max32665_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
-        max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
-        max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
-    else
+        # MAX32690
+        # 
+        max32690_daplink=0409000069f9823300000000000000000000000097969906
+        # CN2 - UART2
+        #
+        max32690_cn2_uart2="D30AKVTH"
+
+        #
+        max32690_uart3="DT03OEFO"
+    else  # wall-e
         sniffer_sn="47F745082791B043"
         jtag_sn_1=04091702d4f18ac600000000000000000000000097969906
         jtag_sn_2=04091702f7f18a2900000000000000000000000097969906
@@ -106,6 +112,10 @@ else  # wall-e
         max32665_cn2_uart1="D30A1X9X"
         # usb-FTDI_FT230X_Basic_UART_DT03O747-if00-port0 -> ../../ttyUSB13
         max32665_uart0="DT03O747"
+
+        max32690_daplink=
+        max32690_cn2_uart2=""
+        max32690_uart3=""
     fi
 fi
 
@@ -122,6 +132,11 @@ echo
 echo "  max32665_daplink: $max32665_daplink"
 echo "max32665_cn2_uart1: $max32665_cn2_uart1"
 echo "    max32665_uart0: $max32665_uart0"
+echo
+echo "  max32690_daplink: $max32690_daplink"
+echo "max32690_cn2_uart2: $max32690_cn2_uart2"
+echo "    max32690_uart3: $max32690_uart3"
+echo
 
 echo TERM: $TERM
 echo TERMINFO: $TERMINFO
@@ -141,8 +156,8 @@ case $SEC_BRD_TYPE in
         export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | rev| cut -b 1-7| rev)"
     ;;
     3)
-        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart1 | rev| cut -b 1-7| rev)"
-        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_uart0 | rev| cut -b 1-7| rev)"
+        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart2 | rev| cut -b 1-7| rev)"
+        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_uart3 | rev| cut -b 1-7| rev)"
     ;;
 esac
 

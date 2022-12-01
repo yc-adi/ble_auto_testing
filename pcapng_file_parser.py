@@ -138,9 +138,9 @@ if __name__ == "__main__":
 
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}')
         if max_tifs <= 152 and min_tifs >= 148:
-            print("TIFS verification: PASS")
+            print("                 TIFS verification: PASS")
         else:
-            print("TIFS verification: FAIL")
+            print("                 TIFS verification: FAIL")
             exit(11)
     else:
         print("No TIFS captured.")
