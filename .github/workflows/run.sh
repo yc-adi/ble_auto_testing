@@ -113,9 +113,15 @@ else
         # usb-FTDI_FT230X_Basic_UART_DT03O747-if00-port0 -> ../../ttyUSB13
         max32665_uart0="DT03O747"
 
+<<<<<<< HEAD
         max32690_daplink=0409170246dfc09500000000000000000000000097969906
         max32690_cn2_uart2="D30ALJPW"
         max32690_uart3="0409170246dfc09500000000000000000000000097969906"
+=======
+        max32690_daplink=04091702b55e4e9600000000000000000000000097969906
+        max32690_cn2_uart2="D30AKVTH"
+        max32690_uart3="DT03OEFO"
+>>>>>>> d32ea3c65af616063f8294a2bc829a8681ccaea8
     fi
 fi
 
