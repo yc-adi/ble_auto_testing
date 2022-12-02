@@ -63,9 +63,9 @@ if [ -f "$FILE" ]; then
     max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
     max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
 
-    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['daplink'])"`
-    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart2'])"`
-    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart3'])"`
+    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
+    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
+    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
 else
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
         sniffer_sn="C7526B63B7BD5962"
@@ -113,9 +113,9 @@ else
         # usb-FTDI_FT230X_Basic_UART_DT03O747-if00-port0 -> ../../ttyUSB13
         max32665_uart0="DT03O747"
 
-        max32690_daplink=
-        max32690_cn2_uart2=""
-        max32690_uart3=""
+        max32690_daplink=0409170246dfc09500000000000000000000000097969906
+        max32690_cn2_uart2="D30ALJPW"
+        max32690_uart3="0409170246dfc09500000000000000000000000097969906"
     fi
 fi
 
@@ -138,9 +138,6 @@ echo "max32690_cn2_uart2: $max32690_cn2_uart2"
 echo "    max32690_uart3: $max32690_uart3"
 echo
 
-echo TERM: $TERM
-echo TERMINFO: $TERMINFO
-
 export snifferSerial=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
 
 export devSerial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | awk -F tty '{print $2}')"
@@ -161,13 +158,13 @@ case $SEC_BRD_TYPE in
     ;;
 esac
 
-echo "sniffer: $snifferSerial"
+echo "           sniffer: $snifferSerial"
 echo
 echo "board 1 trace port: $devSerial_1"
-echo "board 1 HCI port: $devUart3Serial_1"
+echo "  board 1 HCI port: $devUart3Serial_1"
 echo 
 echo "board 2 trace port: $devSerial_2"
-echo "board 2 HCI port: $devUart3Serial_2"
+echo "  board 2 HCI port: $devUart3Serial_2"
 echo 
 
 ./venv/bin/python  ./ble_test.py         --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:11 --brd1-addr 00:11:22:33:44:12 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 35 --tshark /usr/bin/tshark

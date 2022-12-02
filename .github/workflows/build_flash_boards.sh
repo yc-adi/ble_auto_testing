@@ -68,9 +68,9 @@ if [ -f "$FILE" ]; then
     max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
     max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
 
-    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['daplink'])"`
-    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart2'])"`
-    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board1']['uart3'])"`
+    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
+    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
+    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
 else
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
         sniffer_sn="C7526B63B7BD5962"
@@ -118,9 +118,10 @@ else
         # usb-FTDI_FT230X_Basic_UART_DT03O747-if00-port0 -> ../../ttyUSB13
         max32665_uart0="DT03O747"
 
-        max32690_daplink=
-        max32690_cn2_uart2=""
-        max32690_uart3=""
+        # board w1
+        max32690_daplink=0409170246dfc09500000000000000000000000097969906
+        max32690_cn2_uart2="D30ALJPW"
+        max32690_uart3="0409170246dfc09500000000000000000000000097969906"
     fi
 fi
 
