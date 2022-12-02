@@ -141,23 +141,23 @@ echo
 echo TERM: $TERM
 echo TERMINFO: $TERMINFO
 
-export snifferSerial=/dev/"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | rev | cut -b 1-7 | rev)"
+export snifferSerial=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
 
-export devSerial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | rev | cut -b 1-7 | rev)"
-export devUart3Serial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | rev | cut -b 1-7 | rev)"
+export devSerial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | awk -F tty '{print $2}')"
+export devUart3Serial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | awk -F tty '{print $2}')"
 
 case $SEC_BRD_TYPE in
     1)
-        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | rev| cut -b 1-7| rev)"
-        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | rev| cut -b 1-7| rev)"
+        export devSerial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | awk -F tty '{print $2}')"
+        export devUart3Serial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | awk -F tty '{print $2}')"
     ;;
     2)
-        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_cn2_uart1 | rev| cut -b 1-7| rev)"
-        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | rev| cut -b 1-7| rev)"
+        export devSerial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32665_cn2_uart1 | awk -F tty '{print $2}')"
+        export devUart3Serial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | awk -F tty '{print $2}')"
     ;;
     3)
-        export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart2 | rev| cut -b 1-7| rev)"
-        export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_uart3 | rev| cut -b 1-7| rev)"
+        export devSerial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart2 | awk -F tty '{print $2}')"
+        export devUart3Serial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32690_uart3 | awk -F tty '{print $2}')"
     ;;
 esac
 

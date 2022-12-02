@@ -124,7 +124,6 @@ else
     fi
 fi
 
-
 echo "        sniffer_sn: $sniffer_sn"
 echo
 echo "         jtag_sn_1: $jtag_sn_1"
@@ -144,7 +143,7 @@ echo "max32690_cn2_uart2: $max32690_cn2_uart2"
 echo "    max32690_uart3: $max32690_uart3"
 echo
 
-export snifferSerial=/dev/"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | rev | cut -b 1-7 | rev)"
+export snifferSerial=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
 
 export TARGET_1_LC=max32655
 export TARGET_1_UC=MAX32655
@@ -159,22 +158,22 @@ export TARGET_3_UC=MAX32690
 export TARGET_3_CFG=${TARGET_3_LC}.cfg
 
 export CMSIS_DAP_ID_1=$jtag_sn_1
-export devSerial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | rev | cut -b 1-7 | rev)"
-export devUart3Serial_1=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | rev | cut -b 1-7 | rev)"
+export devSerial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | awk -F tty '{print $2}')"
+export devUart3Serial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | awk -F tty '{print $2}')"
 
 export CMSIS_DAP_ID_2=$jtag_sn_2
-export devSerial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | rev| cut -b 1-7| rev)"
-export devUart3Serial_2=/dev/"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | rev| cut -b 1-7| rev)"
+export devSerial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | awk -F tty '{print $2}')"
+export devUart3Serial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | awk -F tty '{print $2}')"
 
 # MAX32665
 export CMSIS_DAP_ID_MAX32665=$max32665_daplink
-export max32665_mon=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_cn2_uart1 | rev| cut -b 1-7| rev)"
-export max32665_hci=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | rev| cut -b 1-7| rev)"
+export max32665_mon=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32665_cn2_uart1 | awk -F tty '{print $2}')"
+export max32665_hci=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32665_uart0 | awk -F tty '{print $2}')"
 
 # MAX32690
 export CMSIS_DAP_ID_MAX32690=$max32690_daplink
-export max32690_mon=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart2 | rev| cut -b 1-7| rev)"
-export max32690_hci=/dev/"$(ls -la /dev/serial/by-id | grep -n $max32690_uart3 | rev| cut -b 1-7| rev)"
+export max32690_mon=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32690_cn2_uart2 | awk -F tty '{print $2}')"
+export max32690_hci=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $max32690_uart3 | awk -F tty '{print $2}')"
 
 export APP_EXAMPLES_PATH=$MSDK_DIR/Examples
 export EXAMPLE_TEST_PATH=$MSDK_DIR/Examples_tests
