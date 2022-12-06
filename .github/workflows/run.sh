@@ -63,9 +63,15 @@ if [ -f "$FILE" ]; then
     max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
     max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
 
-    max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
-    max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
-    max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
+    if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+        max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['daplink'])"`
+        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['uart2'])"`
+        max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['uart3'])"`
+    else
+        max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
+        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
+        max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
+    fi
 else
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
         sniffer_sn="C7526B63B7BD5962"

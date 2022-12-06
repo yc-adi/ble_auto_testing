@@ -47,6 +47,7 @@ from os.path import exists
 from SnifferAPI import Packet
 from pcapng_file_parser import parse_pcapng_file, all_tifs
 from queue import Queue
+import shutil
 import statistics
 import sys
 from terminal import Terminal
@@ -58,6 +59,7 @@ RETRY_LIMIT = 3
 
 q = Queue()  # used to share data between threads
 
+failed_files = []  # used to keep all failed files
 
 class TeeTextIO(io.TextIOBase):
     """Similar to the Linux TEE command.
@@ -333,9 +335,11 @@ def check_results(new_phy):
 
 
 def full_test(args, parse_captured_file, new_phy):
+    global failed_files
+    
     if parse_captured_file:
-        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/output/dev-ttyACM0-None__2022-11-18_10-10-07" \
-                        ".pcapng"
+        #captured_file = "/home/ying-cai/temp_one_time_use/ci_results/dev-ttyACM1-None__2022-12-06_14-29-12.pcapng"
+        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/output/dev-ttyACM0-None__2022-12-06_14-52-01.pcapng"
     else:
         # This test includes the connection, T_IFS, and PHY switch tests.
         captured_file = run_phy_timing_test(args, new_phy)
@@ -349,15 +353,24 @@ def full_test(args, parse_captured_file, new_phy):
     else:
         res = 2
 
-    return res
+    # Save the failed files
+    if not parse_captured_file and res != 0 and captured_file is not None:
+        failed_files.append(captured_file)
 
+    return res
 
 
 if __name__ == "__main__":
     parse_captured_file = False
     args = get_args()
 
-    for new_phy in range(2, 5):  # 2 (2M), 3 (S8), 4 (S2)
+    if parse_captured_file:
+        new_phy_range = 3
+        RETRY_LIMIT = 1
+    else:
+        new_phy_range = 5
+
+    for new_phy in range(2, new_phy_range):  # 2 (2M), 3 (S8), 4 (S2)
         tried = 0
         res = 0
         while tried < RETRY_LIMIT:
@@ -372,6 +385,12 @@ if __name__ == "__main__":
             print(f'Tried {tried} times.')
 
         if res > 0:
+            if len(failed_files) > 0:
+                # Save the failed files to /home/$USER/Workspace/ci_results
+                # Check if the folder exists
+                for f in failed_files:
+                    shutil.copy(f, "/home/$USER/Workspace/ci_results")
+                    print(f'Save failed file: {f}')
             exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")

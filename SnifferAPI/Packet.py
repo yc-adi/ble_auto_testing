@@ -360,7 +360,7 @@ class Packet:
     def __init__(self, packetList, is_parser=False, packet_reader=None, file_type=0, packet_time_from_pcap=None):
         # By default, Packet is used for Sniffer packet generation. This code can be
         # re-used for pcapng file parsing.
-        self.end_to_start = 0  # T_ifs
+        self.end_to_start = 0  # T_IFS
         self.packet_reader = packet_reader
 
         self.eventCounter = None
@@ -559,7 +559,7 @@ class Packet:
                                     print(f'{msg}\n')
 
                         #
-                        # Check T_ifs
+                        # Check T_IFS
                         #
                         if self.packet_reader is not None \
                                 and self.packet_reader.last_ble_packet is not None \
@@ -567,21 +567,7 @@ class Packet:
                             # With advertising packet and data packet
                             if packet_type == PACKET_TYPE_DATA and self.packet_reader.detected_connection:
                                 if not self.direction:      # False: slave to master
-                                    test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
-                                    test_tifs_log.write(f'{self.end_to_start}\n\n')
-
-                                    all_tifs.append(self.end_to_start)
-                            else:
-                                cases = [
-                                    # self.packet_reader.last_ble_packet.advType == 0 and self.blePacket.advType == 3,  # case 1
-                                    #self.packet_reader.last_ble_packet.advType == 3 and self.blePacket.advType == 4   # case 2
-                                ]
-                                if any(cases):
-                                    test_tifs_log.write(f'Packet counter: {self.packetCounter}\n')
-                                    test_tifs_log.write(
-                                        f'Last: {PDU_Types[self.packet_reader.last_ble_packet.advType]}\n')
-                                    test_tifs_log.write(
-                                        f'Curr: {PDU_Types[self.blePacket.advType]}\n')
+                                    test_tifs_log.write(f'Packet cnt: {self.packetCounter}\n')
                                     test_tifs_log.write(f'{self.end_to_start}\n\n')
 
                                     all_tifs.append(self.end_to_start)
