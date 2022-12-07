@@ -299,6 +299,8 @@ def check_results(new_phy):
         else:
             print("                TIFS verification: FAIL")
             res = 1
+
+        all_tifs.clear()  # clear for the next test
     else:
         print("No TIFS captured.")
         res = 2
@@ -355,6 +357,7 @@ def full_test(args, parse_captured_file, new_phy):
 
     # Save the failed files
     if not parse_captured_file and res != 0 and captured_file is not None:
+        print("Added failed file.")
         failed_files.append(captured_file)
 
     return res
@@ -384,12 +387,13 @@ if __name__ == "__main__":
             time.sleep(1)
             print(f'Tried {tried} times.')
 
+
         if res > 0:
             if len(failed_files) > 0:
                 # Save the failed files to /home/$USER/Workspace/ci_results
                 # Check if the folder exists
                 for f in failed_files:
-                    shutil.copy(f, "/home/$USER/Workspace/ci_results")
+                    shutil.copy(f, "/tmp/ci_results")
                     print(f'Save failed file: {f}')
             exit(res)
 

@@ -33,7 +33,6 @@ else
     esac
 fi
 
-echo "--- in run.sh"
 echo "--- PWD: $PWD"
 ls -hal
 
