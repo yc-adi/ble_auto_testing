@@ -52,8 +52,8 @@ serial_ports = [
 ]
 
 addrs = [
-    "00:11:22:33:44:11",  # board 0
-    "00:11:22:33:44:12"  # board 1
+    "00:11:22:33:44:21",  # board 0
+    "00:11:22:33:44:22"  # board 1
 ]
 
 test_time = 30  # secs
@@ -131,7 +131,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
         With a selected device advertisings address
         --capture --extcap-interface COM4-None --fifo FIFO
             --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT
-            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20
+            --dev-addr 00:11:22:33:44:21 --auto-test --timeout 20
 
         No device selected:
         --capture --extcap-interface COM4-None --fifo FIFO --extcap-control-out EXTCAP_CONTROL_OUT
@@ -274,8 +274,8 @@ def get_args():
     parser.add_argument('--interface', help='sniffer interface name like "COM4-None", "/dev/ttyACM0"',
                         default="/dev/ttyACM0-None")
     parser.add_argument('--device', help='sniffer target device name', default="")
-    parser.add_argument('--brd0-addr', help='DevKit board 0 advertising address', default="00:11:22:33:44:11")
-    parser.add_argument('--brd1-addr', help='DevKit board 1 advertising address', default="00:11:22:33:44:12")
+    parser.add_argument('--brd0-addr', help='DevKit board 0 advertising address', default="00:11:22:33:44:21")
+    parser.add_argument('--brd1-addr', help='DevKit board 1 advertising address', default="00:11:22:33:44:22")
     parser.add_argument('--sp0', help='BLE hci serial port for board 0', default="COM9")
     parser.add_argument('--sp1', help='BLE hci serial port for board 1', default="COM10")
     parser.add_argument('--time', help='test time in seconds', type=int, default=30)

@@ -175,7 +175,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
         With a selected device advertisings address
         --capture --extcap-interface COM4-None --fifo FIFO
             --extcap-control-in EXTCAP_CONTROL_IN --extcap-control-out EXTCAP_CONTROL_OUT
-            --dev-addr 00:11:22:33:44:11 --auto-test --timeout 20
+            --dev-addr 00:11:22:33:44:21 --auto-test --timeout 20
 
         No device selected:
         --capture --extcap-interface COM4-None --fifo FIFO --extcap-control-out EXTCAP_CONTROL_OUT
@@ -218,18 +218,21 @@ def run_phy_timing_test(args, new_phy):
         interface = '/dev/ttyACM0-None'
     else:
         interface = args.interface
+    print(f'sniffer interface: {interface}')
 
     device = args.device
 
     if args.brd0_addr is None:
-        brd0_addr = "00:11:22:33:44:11"
+        brd0_addr = "00:11:22:33:44:21"
     else:
         brd0_addr = args.brd0_addr
+    print(f'board 1 addr: {brd0_addr}')
 
     if args.brd1_addr is None:
-        brd1_addr = "00:11:22:33:44:12"
+        brd1_addr = "00:11:22:33:44:22"
     else:
         brd1_addr = args.brd1_addr
+    print(f'board 2 addr: {brd1_addr}')
 
     if args.time is None:
         timeout = 30
@@ -345,7 +348,7 @@ def full_test(args, parse_captured_file, new_phy):
     else:
         # This test includes the connection, T_IFS, and PHY switch tests.
         captured_file = run_phy_timing_test(args, new_phy)
-        print(f'{captured_file}')
+        print(f'captured_file: {captured_file}')
 
     if captured_file is not None:
         if exists(captured_file):

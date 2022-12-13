@@ -56,23 +56,34 @@ echo
 FILE=/home/$USER/Workspace/Resource_Share/boards_config.json
 if [ -f "$FILE" ]; then
     sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['sniffer']['sn'])"`
-    
-    jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
-    jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
-    DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
-    DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart0'])"`
-    DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
-    DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart3'])"`
-
-    max32665_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
-    max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
-    max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
 
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['daplink'])"`
+        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['daplink'])"`
+        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['uart0'])"`
+        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['uart0'])"`
+        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['uart3'])"`
+        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['uart3'])"`
+        
+        max32665_daplink=`/usr/bin/python3 -c   "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['daplink'])"`
+        max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart1'])"`
+        max32665_uart0=`/usr/bin/python3 -c     "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart0'])"`
+
         max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['daplink'])"`
         max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['uart2'])"`
         max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_24']['uart3'])"`
     else
+        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
+        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
+        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
+        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart0'])"`
+        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
+        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart3'])"`
+    
+        max32665_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
+        max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
+        max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
+
         max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
         max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
         max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
@@ -93,13 +104,13 @@ else
         max32665_daplink=0409000069f9823300000000000000000000000097969906
         # CN2 - UART1
         # usb-FTDI_FT230X_Basic_UART_D30A1X9V-if00-port0
-        max32665_cn2_uart1="D30AKVTH"
+        max32665_cn2_uart1="D30A1X9V"
         # usb-FTDI_FT230X_Basic_UART_DT03OEFO-if00-port0
-        max32665_uart0="DT03OEFO"
+        max32665_uart0="DT03OGQ4"
 
         # MAX32690
         # 
-        max32690_daplink=0409000069f9823300000000000000000000000097969906
+        max32690_daplink=04091702b55e4e9600000000000000000000000097969906
         # CN2 - UART2
         #
         max32690_cn2_uart2="D30AKVTH"

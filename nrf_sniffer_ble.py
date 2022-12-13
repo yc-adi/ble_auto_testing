@@ -676,6 +676,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             # First read initial control values
             if auto_test:
                 # Get the target device address
+                print(f'Try to find the target board0 with address: {target_given_addr}.')
                 tried = 0
                 while tried < 15:
                     time.sleep(1)
