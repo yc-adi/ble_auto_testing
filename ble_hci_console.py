@@ -122,12 +122,21 @@ def parseBytes32(byteString):
 class BleHciConsole:
     port = serial.Serial()
     serialPort = ""
+    trace_port = ""
 
     def __init__(self, params):
         try:
+            print(f'BleHciConsole init params: {params}')
+            
+            if "id" in params.keys():
+                self.id = params["id"]
+            else:
+                self.id = "0"
+
             baudrate = defaultBaud
             if "baud" in params.keys():
                 baudrate = params['baud']
+            
             # Open serial port
             serialPort = params["serialPort"]
             self.port = serial.Serial(
@@ -141,14 +150,54 @@ class BleHciConsole:
                 timeout=1.0
             )
             self.port.isOpen()
+                
+            if "monPort" in params.keys():
+                trace_port = params["monPort"]                
+
+            if trace_port == "":
+                self.trace_port = None
+            else:
+                self.trace_port = serial.Serial(
+                    port=str(trace_port),
+                    baudrate=baudrate,
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    bytesize=serial.EIGHTBITS,
+                    rtscts=False,
+                    dsrdtr=False,
+                    timeout=1.0
+                )
+                self.trace_port.isOpen()
+
         except serial.SerialException as err:
             print(err)
             sys.exit(1)
 
         except OverflowError as err:
-            print("baud rate exception, " + str(params["baud"]) + " is too large")
+            print("baud rate exception, " + str(baudrate) + " is too large")
             print(err)
             sys.exit(1)
+
+        if self.trace_port != None:
+            TraceMsgThread = threading.Thread(target=self.monitorTraceMsg, daemon=True)
+            TraceMsgThread.start()
+
+    ## Monitor the TRACE port
+    #
+    # Listen for the trace message from the board UART0
+    ################################################################################
+    def monitorTraceMsg(self):
+        first = True
+        while True:
+            if self.trace_port is not None:
+                msg = self.trace_port.readline().decode("utf-8")
+                msg = msg.replace("\r\n", "")
+                if msg != "":
+                    if first:
+                        print(f'\n{str(datetime.datetime.now())} {self.id} {msg}')
+                        first = False
+                    else:
+                        print(f'{str(datetime.datetime.now())} {self.id} {msg}')
 
     def closeListenDiscon(self):
         # Close the listener thread if active
@@ -235,7 +284,7 @@ class BleHciConsole:
         if (print_evt):
             for i in range(0, packet_len):
                 status_string += '%02X' % payload[i]
-            print(str(datetime.datetime.now()) + " <", status_string)
+            print(str(datetime.datetime.now()) + f" {self.id}<", status_string)
 
         return status_string
 
@@ -261,7 +310,7 @@ class BleHciConsole:
     def send_command(self, packet, resp=True, delay=0.01, print_cmd=True):
         # Send the command and data
         if (print_cmd):
-            print(str(datetime.datetime.now()) + " >", packet)
+            print(str(datetime.datetime.now()) + f" {self.id}>", packet)
 
         self.port.write(bytearray.fromhex(packet))
         sleep(delay)
@@ -273,19 +322,28 @@ class BleHciConsole:
     #
     # Parses a connection stats event and prints the results.
     ################################################################################
+        ## Parse connection stats event.
+    #
+    # Parses a connection stats event and prints the results.
+    ################################################################################
     def parseConnStatsEvt(self, evt):
-        # Offset into the event where the stats start, each stat is 32 bits, or
-        # 8 hex nibbles
-        i = 14
-        rxDataOk = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        rxDataCRC = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        rxDataTO = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        txData = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        errTrans = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+        print(f'parseConnStatsEvt() evt: {evt}')
+        try:
+            # Offset into the event where the stats start, each stat is 32 bits, or
+            # 8 hex nibbles
+            i = 14
+            rxDataOk = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            rxDataCRC = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            rxDataTO = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            txData = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            errTrans = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+        except ValueError as err:
+            print(err)
+            return None
 
         print(self.serialPort)
         print("rxDataOk   : " + str(rxDataOk))
@@ -298,7 +356,6 @@ class BleHciConsole:
         if ((rxDataCRC + rxDataTO + rxDataOk) != 0):
             per = round(float((rxDataCRC + rxDataTO) / (rxDataCRC + rxDataTO + rxDataOk)) * 100, 2)
             print("PER        : " + str(per) + " %")
-
         return per
 
     ## Listen for disconnection events.
@@ -656,6 +713,7 @@ class BleHciConsole:
         # Parse the connection stats event
         per = self.parseConnStatsEvt(statEvt)
 
+        print(f'PER: {per}')
         return per
 
     ## txTest function.

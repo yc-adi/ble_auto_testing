@@ -73,12 +73,12 @@ import argparse
 from argparse import RawTextHelpFormatter
 from time import sleep
 import datetime
-# import readline
 import threading
 
 # Setup the default serial port settings
-defaultBaud = 115200
-defaultSP = "/dev/ttyUSB1"
+defaultBaud=115200
+defaultSP="/dev/ttyUSB0"
+defaultMonSP=""
 
 # Setup the default Bluetooth settings
 defaultAdvInterval = "0x60"
@@ -179,6 +179,23 @@ class BLE_hci:
                 timeout=1.0
             )
             self.port.isOpen()
+
+            if params["monPort"] == "":
+                self.mon_port = None
+            else:
+                mon_port = serial.Serial()
+                self.mon_port = serial.Serial(
+                    port=str(params["monPort"]),
+                    baudrate=params["baud"],
+                    parity=serial.PARITY_NONE,
+                    stopbits=serial.STOPBITS_ONE,
+                    bytesize=serial.EIGHTBITS,
+                    rtscts=False,
+                    dsrdtr=False,
+                    timeout=1.0
+                )
+                self.mon_port.isOpen()
+                
         except serial.SerialException as err:
             print(err)
             sys.exit(1)
@@ -187,6 +204,10 @@ class BLE_hci:
             print("baud rate exception, " + str(params["baud"]) + " is too large")
             print(err)
             sys.exit(1)
+
+        if self.mon_port != None:
+            monTraceMsgThread = threading.Thread(target=self.monTraceMsg, daemon=True)
+            monTraceMsgThread.start()
 
     def closeListenDiscon(self):
         # Close the listener thread if active
@@ -207,6 +228,12 @@ class BLE_hci:
         if (self.port.open == True):
             self.port.flush()
             self.port.close()
+
+        if self.mon_port is not None:
+            if self.mon_port.is_open:
+                self.mon_port.flush()
+                self.mon_port.close()
+
         print("")
 
         # Close the listener thread if active
@@ -305,18 +332,22 @@ class BLE_hci:
     # Parses a connection stats event and prints the results.
     ################################################################################
     def parseConnStatsEvt(self, evt):
-        # Offset into the event where the stats start, each stat is 32 bits, or
-        # 8 hex nibbles
-        i = 14
-        rxDataOk = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        rxDataCRC = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        rxDataTO = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        txData = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
-        i += 8
-        errTrans = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+        try:
+            # Offset into the event where the stats start, each stat is 32 bits, or
+            # 8 hex nibbles
+            i = 14
+            rxDataOk = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            rxDataCRC = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            rxDataTO = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            txData = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+            i += 8
+            errTrans = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
+        except ValueError as err:
+            print(err)
+            return None
 
         print(self.serialPort)
         print("rxDataOk   : " + str(rxDataOk))
@@ -329,8 +360,51 @@ class BLE_hci:
         if ((rxDataCRC + rxDataTO + rxDataOk) != 0):
             per = round(float((rxDataCRC + rxDataTO) / (rxDataCRC + rxDataTO + rxDataOk)) * 100, 2)
             print("PER        : " + str(per) + " %")
+        return per
+
+
+    ## Monitor the UART0
+    #
+    # Listen for the trace message from the board UART0
+    ################################################################################
+    def monTraceMsg(self):
+        first = True
+        while True:
+            if self.mon_port is not None:
+                msg = self.mon_port.readline().decode("utf-8")
+                msg = msg.replace("\r\n", "")
+                if msg != "":
+                    if first:
+                        print(f'\n{str(datetime.datetime.now())} - {msg}')
+                        first = False
+                    else:
+                        print(f'{str(datetime.datetime.now())} - {msg}')
+
+
+    ## Get connection stats.
+    #
+    # Send the command to get the connection stats, parse the return value, return the PER.
+    ################################################################################
+    def connStatsFunc(self, args):
+
+        per = None
+        retries = 5
+        while((per == None) and (retries > 0)):
+            # Send the command to get the connection stats, save the event
+            statEvt = self.send_command("01FDFF00")
+
+            if(retries != 5):
+                # Delay to clear pending events
+                self.wait_events(1)
+                
+
+            # Parse the connection stats event
+            per = self.parseConnStatsEvt(statEvt)
+
+            retries = retries - 1
 
         return per
+
 
     ## Listen for disconnection events.
     #
@@ -675,19 +749,6 @@ class BLE_hci:
 
         return per
 
-    ## Get connection stats.
-    #
-    # Send the command to get the connection stats, parse the return value, return the PER.
-    ################################################################################
-    def connStatsFunc(self, args):
-
-        # Send the command to get the connection stats, save the event
-        statEvt = self.send_command("01FDFF00")
-
-        # Parse the connection stats event
-        per = self.parseConnStatsEvt(statEvt)
-
-        return per
 
     ## txTest function.
     #
@@ -699,6 +760,21 @@ class BLE_hci:
         payload = "%0.2X" % int(args.payload)
         phy = "%0.2X" % int(args.phy)
         self.send_command("01342004" + channel + packetLength + payload + phy)
+
+    ## txTestVS function.
+    #
+    # Sends a vendor specific HCI command for the transmitter test.
+    ################################################################################
+    def txTestVSFunc(self, args):
+        channel="%0.2X"%int(args.channel)
+        packetLength="%0.2X"%int(args.packetLength)
+        payload="%0.2X"%int(args.payload)
+        phy="%0.2X"%int(args.phy)
+
+        numPackets = "%0.2X"%(int(args.numPackets) & 0xFF)
+        numPackets+= "%0.2X"%((int(args.numPackets) & 0xFF00) >> 8)
+
+        self.send_command("0103FF06"+channel+packetLength+payload+phy+numPackets)
 
     ## rxTest function.
     #
@@ -956,10 +1032,16 @@ def parse_args() -> dict:
 
     # Parse the command line arguments
     parser = argparse.ArgumentParser(description=descText, formatter_class=RawTextHelpFormatter)
-    parser.add_argument('--serialPort', nargs='?', default=defaultSP,
-                        help='Serial port path or COM#, default: ' + defaultSP)
+    parser.add_argument('serial_port', nargs='?', default="",
+                        help='Serial port path or COM#, default: '+defaultSP)
     parser.add_argument('baud', nargs='?', default=defaultBaud,
-                        help='Serial port baud rate, default: ' + str(defaultBaud))
+                        help='Serial port baud rate, default: '+str(defaultBaud))
+    parser.add_argument('--monPort', nargs='?', default=defaultMonSP,
+                        help='Monitor Trace Msg Serial Port path or COM#, default: ' + defaultMonSP)
+    parser.add_argument('--serialPort', nargs='?', default=defaultSP,
+                        help='Serial port path or COM#, default: '+defaultSP)
+    parser.add_argument('--baud', nargs='?', default=defaultBaud,
+                        help='Serial port baud rate, default: '+str(defaultBaud))
     parser.add_argument('-c', '--command', default="", help='Commands to run')
 
     args = parser.parse_args()
@@ -969,7 +1051,7 @@ def parse_args() -> dict:
 
 def run_terminal(params: dict):
     global terminal
-    
+    print(f'params: {params}')
     serialPort = params["serialPort"]
     print("Bluetooth Low Energy HCI tool")
     print("Serial port: " + serialPort)
@@ -1097,6 +1179,38 @@ def run_terminal(params: dict):
         default: 0
     """)
     txTest_parser.set_defaults(func=ble_hci.txTestFunc)
+
+    txTestVS_parser = subparsers.add_parser('txTestVS', aliases=['tx'], help="Execute the transmitter test", formatter_class=RawTextHelpFormatter)
+    txTestVS_parser.add_argument('-c', '--channel', default="0", help="TX test channel, 0-39, default: 0")
+    txTestVS_parser.add_argument('--phy', default="1", help=
+    """TX test PHY
+        1: 1M
+        2: 2M
+        3: S8
+        4: S2
+        default: 1M
+    """)
+    txTestVS_parser.add_argument('-p','--payload', default="0", help=
+    """TX test Payload
+        0: PRBS9
+        1: 11110000
+        2: 10101010
+        3: PRBS15
+        4: 11111111
+        5: 00000000
+        6: 00001111
+        7: 01010101
+        default: PRBS9
+    """)
+    txTestVS_parser.add_argument('-pl', '--packetLength', default="0", help=
+    """"TX packet length, number of bytes per packet, 0-255
+        default: 0
+    """)
+    txTestVS_parser.add_argument('-np', '--numPackets', default="0", help=
+    """"Number of packets to TX, 2 bytes hex, 0 equals inf.
+        default: 0
+    """)
+    txTestVS_parser.set_defaults(func=ble_hci.txTestVSFunc)
 
     rxTest_parser = subparsers.add_parser('rxTest', aliases=['rx'], help="Execute the receiver test")
     rxTest_parser.add_argument('-c', '--channel', default="0", help="RX test channel, 0-39, default: 0")

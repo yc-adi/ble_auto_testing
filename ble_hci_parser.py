@@ -35,16 +35,16 @@
 
 import argparse
 import ble_hci_console
-import datetime
-import os
-import serial
-import sys
-from time import sleep
 
 
 class BleHciParser:
     def __init__(self, params):
         self.args = None
+
+        if "id" in params.keys():
+            self.id = params["id"]
+        else:
+            self.id = "0"
 
         self.hci_console = ble_hci_console.BleHciConsole(params)
 

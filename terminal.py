@@ -104,12 +104,12 @@ class Terminal(threading.Thread):
 
     def input_cmd(self, dut, cmd):
         """directly input cmd to the terminal
-            param dut: the board index
+            param dut: the board index. 0-based
             param cmd: the cmd string
 
             return: none
         """
-        print(f'{str(datetime.datetime.now())} - DUT {dut}: {cmd}')
+        print(f'{str(datetime.datetime.now())} {dut + 1}  {cmd}')
 
         args = cmd.split()
         try:
