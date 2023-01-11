@@ -122,7 +122,6 @@ def parseBytes32(byteString):
 class BleHciConsole:
     port = serial.Serial()
     serialPort = ""
-    trace_port = ""
 
     def __init__(self, params):
         try:
@@ -150,15 +149,11 @@ class BleHciConsole:
                 timeout=1.0
             )
             self.port.isOpen()
-                
-            if "monPort" in params.keys():
-                trace_port = params["monPort"]                
 
-            if trace_port == "":
-                self.trace_port = None
-            else:
+            self.trace_port = None                
+            if "monPort" in params.keys():
                 self.trace_port = serial.Serial(
-                    port=str(trace_port),
+                    port=str(params["monPort"]),
                     baudrate=baudrate,
                     parity=serial.PARITY_NONE,
                     stopbits=serial.STOPBITS_ONE,
@@ -194,10 +189,10 @@ class BleHciConsole:
                 msg = msg.replace("\r\n", "")
                 if msg != "":
                     if first:
-                        print(f'\n{str(datetime.datetime.now())} {self.id} {msg}')
+                        print(f'\n{str(datetime.datetime.now())} {self.id}T {msg}')
                         first = False
                     else:
-                        print(f'{str(datetime.datetime.now())} {self.id} {msg}')
+                        print(f'{str(datetime.datetime.now())} {self.id}T {msg}')
 
     def closeListenDiscon(self):
         # Close the listener thread if active
@@ -307,15 +302,16 @@ class BleHciConsole:
     # Send a HCI command to the serial port. Will add a small delay and wait for
     # and print an HCI event by default.
     ################################################################################
-    def send_command(self, packet, resp=True, delay=0.01, print_cmd=True):
-        # Send the command and data
-        if (print_cmd):
-            print(str(datetime.datetime.now()) + f" {self.id}>", packet)
-
-        self.port.write(bytearray.fromhex(packet))
+    def send_command(self, packet, resp=True, delay=0.010, print_cmd=True):
         sleep(delay)
 
-        if (resp):
+        # Send the command and data
+        if print_cmd:
+            print(str(datetime.datetime.now()) + f" {self.id}> {packet}")
+        
+        self.port.write(bytearray.fromhex(packet))
+
+        if resp:
             return self.wait_event()
 
     ## Parse connection stats event.
@@ -327,7 +323,6 @@ class BleHciConsole:
     # Parses a connection stats event and prints the results.
     ################################################################################
     def parseConnStatsEvt(self, evt):
-        print(f'parseConnStatsEvt() evt: {evt}')
         try:
             # Offset into the event where the stats start, each stat is 32 bits, or
             # 8 hex nibbles

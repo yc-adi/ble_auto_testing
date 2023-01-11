@@ -46,6 +46,7 @@ from nrf_sniffer_ble import capture_write, run_sniffer as exe_sniffer
 from os.path import exists
 from SnifferAPI import Packet
 from pcapng_file_parser import parse_pcapng_file, all_tifs
+from pprint import pprint
 from queue import Queue
 import shutil
 import statistics
@@ -55,12 +56,11 @@ import time
 import threading
 
 
-RETRY_LIMIT = 1  # remove me !!!
-
 q = Queue()  # used to share data between threads
 
 failed_files = []  # used to keep all failed files
 
+PERs = []
 class TeeTextIO(io.TextIOBase):
     """Similar to the Linux TEE command.
     """
@@ -135,121 +135,145 @@ def per_test(terminal_thd, addr1, addr2, new_phy):
     """
 
     """
+    global PERs
+
+    ret = 0
+
     phy_cmd = ["1M", "2M", "S8", "S2"]
 
-    if new_phy < 2 or new_phy > 4:        
-        print(f'{new_phy} is invalid new phy. Changed to 2 (2M).')
-        new_phy = 2
+    if new_phy < 1 or new_phy > 4:        
+        print(f'{new_phy} is invalid new phy. Changed to 1 (1M).')
+        new_phy = 1
 
     print(f'\n---------------------------------------------------------------------------------------')
     print(f'packetLen: {250}, phy: {new_phy}, txPower: {0}\n')
 
-    if True:
-        terminal_thd.input_cmd(0, "reset")
+    terminal_thd.input_cmd(0, "reset")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "reset")
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- Reset the attenuation to 30.\n')
+    #mini_RCDAT = mini_RCDAT_USB(Namespace(atten=30))
+    #time.sleep(0.1)
+
+    print(f'\n{datetime.now()} -- Set the addresses.\n')
+    terminal_thd.input_cmd(0, "addr " + addr1)
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "addr " + addr2)
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- Set PHY.\n')
+    terminal_thd.input_cmd(0, "phy " + str(new_phy))
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- Set TX power.\n')
+    terminal_thd.input_cmd(1, 'txPower --handle 0 0')
+    time.sleep(1)  # remove me !!!
+    terminal_thd.input_cmd(0, 'txPower --handle 0 0')
+    time.sleep(1)
+
+    print(f'\n{datetime.now()} -- Start advertising and connection.\n')
+    terminal_thd.input_cmd(0, "adv -i 60 -c True -l False")  # no -s -m
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "init -i 6 -t 64 -l False " + addr1)
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- listen.\n')
+    terminal_thd.input_cmd(1, "listen -t 1")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "listen -t 1")
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- dataLen.\n')
+    terminal_thd.input_cmd(1, "dataLen")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "dataLen")
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- listen.\n')
+    terminal_thd.input_cmd(1, "listen -t 1")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "listen -t 1")
+    time.sleep(0.2)
+
+    print(f'\n{datetime.now()} -- sinkAcl.\n')
+    terminal_thd.input_cmd(1, "sinkAcl")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "sinkAcl")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "listen -t 1")
+    time.sleep(0.2)
+
+    terminal_thd.input_cmd(1, "sendAcl 250 0")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "sendAcl 250 0")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "listen -t 1")
+    time.sleep(0.2)
+
+    terminal_thd.input_cmd(1, "sendAcl 250 1")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(0, "sendAcl 250 1")
+    time.sleep(0.2)
+    terminal_thd.input_cmd(1, "listen -t 1")
+    time.sleep(0.2)
+    
+    per_100 = False
+    for atten in range(20, 35, 55):
+        print('\n-------------------------------------------------')
+        print(f'packetLen: {250}, phy: {new_phy}, txPower: {0}, atten: {atten}\n')
+
+        print(f"{datetime.now()} -  Set the required attenuation: {atten}")
+        #mini_RCDAT = mini_RCDAT_USB(Namespace(atten=atten))
+        time.sleep(0.1)
+
+        terminal_thd.input_cmd(1, 'cmd 0102FF00')
         time.sleep(0.2)
-        terminal_thd.input_cmd(1, "reset")
+        terminal_thd.input_cmd(0, 'cmd 0102FF00')
+        time.sleep(0.2)
+        terminal_thd.input_cmd(1, "listen -t 1")
         time.sleep(0.2)
 
-        print(f'\n{datetime.now()} -- Reset the attenuation to 30.\n')
-        #mini_RCDAT = mini_RCDAT_USB(Namespace(atten=30))
-        #time.sleep(0.1)
+        print(f'\n{datetime.now()} -- Sleep requested delay seconds.\n')
+        time.sleep(5)
 
-        print(f'\n{datetime.now()} -- Set the addresses.\n')
-        terminal_thd.input_cmd(0, "addr " + addr1)
-        time.sleep(0.2)
-        terminal_thd.input_cmd(1, "addr " + addr2)
-        time.sleep(0.2)
-
-        print(f'\n{datetime.now()} -- Set PHY.\n')
-        terminal_thd.input_cmd(0, "phy " + str(new_phy))
-        time.sleep(0.2)
-
-        print(f'\n{datetime.now()} -- Set TX power.\n')
-        terminal_thd.input_cmd(1, 'txPower --handle 0 0')
-        time.sleep(1)  # remove me !!!
-        terminal_thd.input_cmd(0, 'txPower --handle 0 0')
-        time.sleep(1)
-
-        print(f'\n{datetime.now()} -- Start advertising and connection.\n')
-        terminal_thd.input_cmd(0, "adv -i 60 -c True -l False")  # no -s -m
-        time.sleep(0.2)
-        terminal_thd.input_cmd(1, "init -i 6 -t 64 -l False " + addr1)
-        time.sleep(0.2)
-
-        print(f'\n{datetime.now()} -- listen.\n')
+        # Read any pending events
         terminal_thd.input_cmd(1, "listen -t 1")
         time.sleep(0.2)
         terminal_thd.input_cmd(0, "listen -t 1")
         time.sleep(0.2)
 
-        print(f'\n{datetime.now()} -- dataLen.\n')
-        terminal_thd.input_cmd(1, "dataLen")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(0, "dataLen")
+        slv_per = terminal_thd.input_cmd(1, "connStats")
         time.sleep(0.2)
 
-        print(f'\n{datetime.now()} -- listen.\n')
-        terminal_thd.input_cmd(1, "listen -t 1")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(0, "listen -t 1")
-        time.sleep(0.2)
-
-        print(f'\n{datetime.now()} -- sinkAcl.\n')
-        terminal_thd.input_cmd(1, "sinkAcl")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(0, "sinkAcl")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(1, "listen -t 1")
-        time.sleep(0.2)
-
-        terminal_thd.input_cmd(1, "sendAcl 250 0")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(0, "sendAcl 250 0")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(1, "listen -t 1")
-        time.sleep(0.2)
-
-        terminal_thd.input_cmd(1, "sendAcl 250 1")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(0, "sendAcl 250 1")
-        time.sleep(0.2)
-        terminal_thd.input_cmd(1, "listen -t 1")
+        mst_per = terminal_thd.input_cmd(0, "connStats")
         time.sleep(0.2)
         
-        per_100 = False
-        for atten in range(20, 35, 55):
-            print('\n-------------------------------------------------')
-            print(f'packetLen: {250}, phy: {new_phy}, atten: {atten}, txPower: {0}\n')
+        if slv_per is None or mst_per is None:
+            print(f'\n{datetime.now()} -- TEST FAILED!.\n')
+            ret = 0            
+            break
 
-            print(f"{datetime.now()} - Set the required attenuation: {atten}")
-            #mini_RCDAT = mini_RCDAT_USB(Namespace(atten=atten))
-            time.sleep(0.1)
+        if float(slv_per) >= 99.99 or float(mst_per) >= 99.99:
+            print(f'\n{datetime.now()} -- TEST FAILED!.\n')
+            ret = 1
+            break
+        
+        PERs.append((slv_per, mst_per))
 
-            terminal_thd.input_cmd(1, 'cmd 0102FF00')
-            time.sleep(0.2)
-            terminal_thd.input_cmd(0, 'cmd 0102FF00')
-            time.sleep(0.2)
-            terminal_thd.input_cmd(1, "listen -t 1")
-            time.sleep(0.2)
 
-            print(f'\n{datetime.now()} -- Sleep requested delay seconds.\n')
-            time.sleep(5)
-
-            # Read any pending events
-            terminal_thd.input_cmd(1, "listen -t 1")
-            time.sleep(0.2)
-            terminal_thd.input_cmd(0, "listen -t 1")
-            time.sleep(0.2)
-
-            terminal_thd.input_cmd(1, "connStats")
-            time.sleep(0.2)
-            terminal_thd.input_cmd(0, "connStats")
-            time.sleep(0.2)
-
+    #print(f'\n{datetime.now()} -- Reset before exit.\n')
+    #terminal_thd.input_cmd(0, "reset")
+    #time.sleep(0.2)
+    #terminal_thd.input_cmd(1, "reset")
+    #time.sleep(0.2)
 
     terminal_thd.input = "exit"
 
     print(f'{str(datetime.now())} - Finish PHY timing test ({phy_cmd[new_phy - 1]}).\n')
+
+    return ret
 
 
 def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int, queue: Queue) -> dict:
@@ -343,24 +367,8 @@ def run_per_test(args, new_phy):
     #sniffer_thd.daemon = True
     #sniffer_thd.start()
 
-    per_test(term_thread, brd0_addr, brd1_addr, new_phy)
-
-    #sniffer_thd.join()  # wait the test to finish
-
-    if q.empty():  # check if there is captured file
-        return None
-    else:
-        pcap_file = q.get()
-        print(f'{str(datetime.now())} - Captured file: {pcap_file}')
-
-        if exists(pcap_file):
-            # Need to convert pcap file to pcapng format.
-            pcapng_file = pcap_file.replace(".pcap", ".pcapng")
-            # "C:\\Program Files\\Wireshark\\tshark.exe"
-            convert_pcap_to_pcapng(pcap_file, pcapng_file, "/usr/bin/tshark")
-
-            return pcapng_file
-
+    res = per_test(term_thread, brd0_addr, brd1_addr, new_phy)
+    return res
 
 def parse_phy_timing_test_results(captured_file: str):
     file_type = 1  # see parse_pcapng_file() description
@@ -429,17 +437,7 @@ def check_results(new_phy):
 
 def full_test(args, parse_captured_file, new_phy):
     global failed_files
-    res = 0
-
-    if parse_captured_file:
-        #captured_file = "/home/ying-cai/temp_one_time_use/ci_results/dev-ttyACM1-None__2022-12-06_14-29-12.pcapng"
-        captured_file = "/home/ying-cai/Workspace/ble_auto_testing/output/dev-ttyACM0-None__2022-12-06_14-52-01.pcapng"
-    else:
-        # This test includes the connection, T_IFS, and PHY switch tests.
-        #captured_file = run_phy_timing_test(args, new_phy)
-        captured_file = run_per_test(args, new_phy)
-        print(f'captured_file: {captured_file}')
-
+    res = run_per_test(args, new_phy)
     return res
 
 
@@ -447,16 +445,16 @@ if __name__ == "__main__":
     parse_captured_file = False
     args = get_args()
 
-    if parse_captured_file:
-        new_phy_range = 3
-        RETRY_LIMIT = 1
-    else:
-        new_phy_range = 5
+    for i in range(20):
+        print(f'-----------------------------------------------------------------------------------')
+        print(f'Test: {i +1}')
+        print(f'-----------------------------------------------------------------------------------')
 
-    #for new_phy in range(2, new_phy_range):  # 2 (2M), 3 (S8), 4 (S2)
-    for new_phy in range(1, 2):  # 2 (2M), 3 (S8), 4 (S2) remove me !!!
-        res = 0
-        res = full_test(args, parse_captured_file, new_phy)
+        res = full_test(args, parse_captured_file, 1)
+        if res != 0:
+            break
 
-    print(f"\n{str(datetime.now())} - Done!")
+        pprint(PERs)
+
+    print(f"\n{str(datetime.now())} - Done with return value: {res}.")
 

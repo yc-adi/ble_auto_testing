@@ -115,10 +115,12 @@ class Terminal(threading.Thread):
         try:
             cmd_parser = self.hci_parsers[dut].hci_parser
             cmd_parser.args = cmd_parser.parse_args(args)
-            cmd_parser.args.func(cmd_parser.args)
+            ret = cmd_parser.args.func(cmd_parser.args)
+            if ret is not None:
+                return ret
         except SystemExit:
             # ignore the exit from argparse help option
-            pass
+            return None
 
     def run(self):
         global input_state, input_buffer

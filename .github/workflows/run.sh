@@ -184,4 +184,6 @@ echo "board 2 trace port: $devSerial_2"
 echo "  board 2 HCI port: $devUart3Serial_2"
 echo 
 
-./venv/bin/python  ./ble_test.py         --interface ${snifferSerial}-None --device "" --brd0-addr 00:11:22:33:44:21 --brd1-addr 00:11:22:33:44:22 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 --time 35 --tshark /usr/bin/tshark
+./venv/bin/python ./ble_test.py --interface ${snifferSerial}-None --device "" \
+    --brd0-addr 00:11:22:33:44:21 --brd1-addr 00:11:22:33:44:22 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
+    --time 35 --tshark /usr/bin/tshark
