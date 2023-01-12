@@ -125,7 +125,7 @@ class BleHciConsole:
 
     def __init__(self, params):
         try:
-            print(f'BleHciConsole init params: {params}')
+            print(f'BleHciConsole init params: {params}\n')
             
             if "id" in params.keys():
                 self.id = params["id"]

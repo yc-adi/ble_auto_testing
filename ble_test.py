@@ -110,7 +110,8 @@ def start_threads(sp0, sp1):
     # prepare the BLE HCI consoles
     params = {'serialPort': sp0}
     index = terminal_thread.add_hci_parser(params)
-    params['serialPort'] = sp1
+    #params['serialPort'] = sp1
+    params = {'serialPort': sp1}
     index = terminal_thread.add_hci_parser(params)
 
     main_thread = threading.Thread(target=start_main, args=(all_threads, terminal_thread))
@@ -288,12 +289,15 @@ def check_results(new_phy):
     # check T_IFS
     #
     if len(all_tifs) > 0:
+        first_readings = min(50, len(all_tifs))
+        print(f'The first {first_readings} readings:\n{all_tifs[:first_readings]}')
+
         max_tifs = max(all_tifs)
         min_tifs = min(all_tifs)
         avg = sum(all_tifs) / len(all_tifs)
 
-        print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs}, min: {min_tifs}, average: {avg:.1f}, '
-              f'median: {statistics.median(all_tifs)}')
+        print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs} at {all_tifs.index(max_tifs)}, '
+              f'min: {min_tifs} at {all_tifs.index(max_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
     
         print("\n\n-------------------------------------------------------------------")
         if max_tifs <= 152 and min_tifs >= 148:
