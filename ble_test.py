@@ -45,7 +45,8 @@ import io
 from nrf_sniffer_ble import capture_write, run_sniffer as exe_sniffer
 from os.path import exists
 from SnifferAPI import Packet
-from pcapng_file_parser import parse_pcapng_file, all_tifs
+from SnifferAPI.Packet import all_tifs
+from pcapng_file_parser import parse_pcapng_file
 from queue import Queue
 import shutil
 import statistics
@@ -282,6 +283,8 @@ def parse_phy_timing_test_results(captured_file: str):
 
 
 def check_results(new_phy):
+    global all_tifs
+
     phy_cmd = ["1M", "2M", "S8", "S2"]
     res = 0
 
@@ -290,15 +293,16 @@ def check_results(new_phy):
     #
     if len(all_tifs) > 0:
         first_readings = min(50, len(all_tifs))
-        print(f'The first {first_readings} readings:\n{all_tifs[:first_readings]}')
+        print(f'The first {first_readings} readings:\n{all_tifs[0:first_readings]}')
 
         max_tifs = max(all_tifs)
         min_tifs = min(all_tifs)
         avg = sum(all_tifs) / len(all_tifs)
 
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs} at {all_tifs.index(max_tifs)}, '
-              f'min: {min_tifs} at {all_tifs.index(max_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
-    
+              f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
+        print(f'Address of all_tifs: {id(all_tifs)}')
+
         print("\n\n-------------------------------------------------------------------")
         if max_tifs <= 152 and min_tifs >= 148:
             print("                TIFS verification: PASS")
@@ -306,7 +310,7 @@ def check_results(new_phy):
         else:
             print("                TIFS verification: FAIL")
             res = 1
-
+        
         all_tifs.clear()  # clear for the next test
     else:
         print("No TIFS captured.")
