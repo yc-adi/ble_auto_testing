@@ -1,4 +1,4 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
 ################################################################################
 # Copyright (C) 2020 Maxim Integrated Products, Inc., All Rights Reserved.
@@ -77,7 +77,7 @@ import threading
 
 # Setup the default serial port settings
 defaultBaud=115200
-defaultSP="/dev/ttyUSB0"
+defaultSP="/dev/ttyUSB5"
 defaultMonSP=""
 
 # Setup the default Bluetooth settings

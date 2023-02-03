@@ -238,8 +238,7 @@ class BleHciConsole:
     # Waits for an HCI event, optionally prints the received event.
     # Will timeout on the serial port if nothing arrives.
     ################################################################################
-    def wait_event(self, print_evt=True, timeout=1.0):
-
+    def wait_event(self, print_evt=True, timeout=1.0, responded=""):
         # Set the serial port timeout
         self.port.timeout = timeout
 
@@ -248,6 +247,9 @@ class BleHciConsole:
         if (len(evt) == 0):
             # TODO: Read flush
             self.port.flush()
+            if responded == "":
+                #print(str(datetime.datetime.now()) + f" {self.id}< Error: response timeout")
+                pass
             return ""
 
         evt = int(codecs.encode(evt, 'hex_codec'), 16)
@@ -271,7 +273,7 @@ class BleHciConsole:
 
         else:
             print("Error: unknown evt = " + str(evt))
-            return
+            return ""
 
         payload = self.port.read(size=packet_len)
 
@@ -287,12 +289,13 @@ class BleHciConsole:
     #
     # Waits to receive HCI events, prints the timestamp every 30 seconds.
     ################################################################################
-    def wait_events(self, seconds=2, print_evt=True):
+    def wait_events(self, seconds=2, print_evt=True, last_resp=''):
         # Read events from the device for a few seconds
         start_time = datetime.datetime.now()
         delta = datetime.datetime.now() - start_time
+
         while ((delta.seconds < seconds) or (seconds == 0)):
-            self.wait_event(print_evt=print_evt, timeout=0.1)
+            last_resp += self.wait_event(print_evt=print_evt, timeout=0.1, responded=last_resp)
             delta = datetime.datetime.now() - start_time
             if ((delta.seconds > 30) and ((delta.seconds % 30) == 0)):
                 print(str(datetime.datetime.now()) + " |")
@@ -645,8 +648,8 @@ class BleHciConsole:
         elif (args.phy != "1"):
             print("Invalid PHY selection, using 1M")
 
-        self.send_command("01322007" + "0000" + "00" + phy + phy + phyOptions)
-        self.wait_events(3)
+        res = self.send_command("01322007" + "0000" + "00" + phy + phy + phyOptions)
+        self.wait_events(3, last_resp=res)
 
     ## Rest function.
     #

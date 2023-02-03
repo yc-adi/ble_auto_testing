@@ -442,6 +442,7 @@ def full_test(args, parse_captured_file, new_phy):
 
 
 if __name__ == "__main__":
+    print("----------------------------------------------------------------------------------------")
     parse_captured_file = False
     args = get_args()
 

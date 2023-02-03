@@ -276,13 +276,13 @@ def get_args():
     parser.add_argument('--device', help='sniffer target device name', default="")
     parser.add_argument('--brd0-addr', help='DevKit board 0 advertising address', default="00:11:22:33:44:21")
     parser.add_argument('--brd1-addr', help='DevKit board 1 advertising address', default="00:11:22:33:44:22")
-    parser.add_argument('--sp0', help='BLE hci serial port for board 0', default="COM9")
-    parser.add_argument('--sp1', help='BLE hci serial port for board 1', default="COM10")
-    parser.add_argument('--tp0', help='BLE hci serial port for board 0 TRACE msg', default="")
-    parser.add_argument('--tp1', help='BLE hci serial port for board 1 TRACE msg', default="")
+    parser.add_argument('--sp0', help='BLE hci serial port for board 0', default="/dev/ttyUSB2")
+    parser.add_argument('--sp1', help='BLE hci serial port for board 1', default="/dev/ttyUSB7")
+    parser.add_argument('--tp0', help='BLE hci serial port for board 0 TRACE msg', default="/dev/ttyUSB8")
+    parser.add_argument('--tp1', help='BLE hci serial port for board 1 TRACE msg', default="/dev/ttyUSB5")
     parser.add_argument('--time', help='test time in seconds', type=int, default=30)
     parser.add_argument('--tshark', help='tshark program to convert pcap to pcapng', default=
-                        "C:\\Program Files\\Wireshark\\tshark.exe")
+                        "/usr/bin/tshark")
     args = parser.parse_args()
     pprint(args)
 
