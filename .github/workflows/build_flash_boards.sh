@@ -69,9 +69,9 @@ if [ -f "$FILE" ]; then
         max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart1'])"`
         max32665_uart0=`/usr/bin/python3     -c "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart0'])"`
 
-        max32690_daplink=`/usr/bin/python3   -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['daplink'])"`
-        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['uart2'])"`
-        max32690_uart3=`/usr/bin/python3     -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['uart3'])"`
+        max32690_daplink=`/usr/bin/python3   -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_A1']['daplink'])"`
+        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_A1']['uart2'])"`
+        max32690_uart3=`/usr/bin/python3     -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_A1']['uart3'])"`
     else
         jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
         jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
