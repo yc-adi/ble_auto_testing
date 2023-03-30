@@ -54,23 +54,18 @@ echo
 FILE=/home/$USER/Workspace/ci_config/boards_config.json
 # get the test boards
 TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/RF-PHY-closed.json
-    
-if [ `hostname` == "yingcai-OptiPlex-790" ]; then  
-    sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['sniffer'])"`
-else
-    sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['wall-e']['sniffer'])"`
-fi
+
+HOST_NAME=`hostname`
+sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['sniffer'])"`
+BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['max32655'][0])"`
+BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['max32655'][1])"`
 
 echo "     sniffer board: ${sniffer}"
-sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
-
-BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['max32655'][0])"`
-echo "             BRD1: ${BRD1}"
-
-BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['max32655'][1])"`
-echo "             BRD2: ${BRD2}"
+echo "              BRD1: ${BRD1}"
+echo "              BRD2: ${BRD2}"
 echo
 
+sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
 jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['DAP_sn'])"`
 jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
 DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['con_sn'])"`
@@ -140,11 +135,11 @@ if [ `hostname` == "yingcai-OptiPlex-790" ]; then
     ADDR1=00:12:23:34:45:01
     ADDR2=00:12:23:34:45:02
 else
-    ADDR1=00:13:23:34:45:11
-    ADDR2=00:13:23:34:45:12
+    ADDR1=00:11:22:33:44:21
+    ADDR2=00:11:22:33:44:22
 fi
 
-./venv/bin/python ./ble_test.py --interface ${snifferSerial}-None --device "" \
+unbuffer python3 ble_test.py --interface ${snifferSerial}-None --device "" \
     --brd0-addr $ADDR1 --brd1-addr $ADDR2 \
     --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
     --tp0 "$devSerial_1" --tp1 $devSerial_2 \
