@@ -33,108 +33,59 @@ else
     esac
 fi
 
-echo "--- PWD: $PWD"
+echo "PWD: $PWD"
+echo
+
 ls -hal
 
-#set -x
 set -e
 set -o pipefail
 
-python -m venv venv
-source ./venv/bin/activate
-python -m pip install -r requirements.txt
+#echo "Create the Python env."
+#python -m venv venv
+#source ./venv/bin/activate
+#python -m pip install -r requirements.txt
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate py3_10
 
 # Note: index of the two DevKit boards are 1-based.
 echo
 
-FILE=/home/$USER/Workspace/Resource_Share/boards_config.json
-if [ -f "$FILE" ]; then
-    sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['sniffer']['sn'])"`
-
-    if [ `hostname` == "yingcai-OptiPlex-790" ]; then
-        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['daplink'])"`
-        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['daplink'])"`
-        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['uart0'])"`
-        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['uart0'])"`
-        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y1']['uart3'])"`
-        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board_y2']['uart3'])"`
-        
-        max32665_daplink=`/usr/bin/python3 -c   "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['daplink'])"`
-        max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart1'])"`
-        max32665_uart0=`/usr/bin/python3 -c     "import sys, json; print(json.load(open('$FILE'))['max32665_board_2']['uart0'])"`
-
-        max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['daplink'])"`
-        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['uart2'])"`
-        max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_3']['uart3'])"`
-    else
-        jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['daplink'])"`
-        jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['daplink'])"`
-        DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart0'])"`
-        DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart0'])"`
-        DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board1']['uart3'])"`
-        DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32655_board2']['uart3'])"`
+FILE=/home/$USER/Workspace/ci_config/boards_config.json
+# get the test boards
+TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/RF-PHY-closed.json
     
-        max32665_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['daplink'])"`
-        max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart1'])"`
-        max32665_uart0=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32665_board1']['uart0'])"`
-
-        max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['daplink'])"`
-        max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart2'])"`
-        max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['max32690_board_w1']['uart3'])"`
-    fi
+if [ `hostname` == "yingcai-OptiPlex-790" ]; then  
+    sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['sniffer'])"`
 else
-    if [ `hostname` == "yingcai-OptiPlex-790" ]; then
-        sniffer_sn="C7526B63B7BD5962"
-        jtag_sn_1=0444170169c5c14600000000000000000000000097969906
-        jtag_sn_2=044417016bd8439a00000000000000000000000097969906
-        
-        DevKitUart0Sn_1="D3073IDG"
-        DevKitUart0Sn_2="D309ZDE9"
-        DevKitUart3Sn_1="DT03OFRJ"
-        DevKitUart3Sn_2="DT03NSU1"
-
-        # MAX32665
-        # usb-ARM_DAPLink_CMSIS-DAP_0409000069f9823300000000000000000000000097969906-if01
-        max32665_daplink=0409000069f9823300000000000000000000000097969906
-        # CN2 - UART1
-        # usb-FTDI_FT230X_Basic_UART_D30A1X9V-if00-port0
-        max32665_cn2_uart1="D30A1X9V"
-        # usb-FTDI_FT230X_Basic_UART_DT03OEFO-if00-port0
-        max32665_uart0="DT03OGQ4"
-
-        # MAX32690
-        # 
-        max32690_daplink=04091702b55e4e9600000000000000000000000097969906
-        # CN2 - UART2
-        #
-        max32690_cn2_uart2="D30AKVTH"
-
-        #
-        max32690_uart3="DT03OEFO"
-    else  # wall-e
-        sniffer_sn="47F745082791B043"
-        jtag_sn_1=04091702d4f18ac600000000000000000000000097969906
-        jtag_sn_2=04091702f7f18a2900000000000000000000000097969906
-        DevKitUart0Sn_1="D309ZDFB"
-        DevKitUart0Sn_2="D3073ICQ"
-        DevKitUart3Sn_1="DT03O9WB"
-        DevKitUart3Sn_2="DT03OFQ0"
-
-        # MAX32665, SN: 13
-        # usb-ARM_DAPLink_CMSIS-DAP_0409000098d9439b00000000000000000000000097969906-if01 -> ../../ttyACM2
-        max32665_daplink=0409000098d9439b00000000000000000000000097969906
-        # CN2 - UART1
-        #  usb-FTDI_FT230X_Basic_UART_D30A1X9X-if00-port0 -> ../../ttyUSB1
-        max32665_cn2_uart1="D30A1X9X"
-        # usb-FTDI_FT230X_Basic_UART_DT03O747-if00-port0 -> ../../ttyUSB13
-        max32665_uart0="DT03O747"
-
-        # board w1
-        max32690_daplink=0409170246dfc09500000000000000000000000097969906
-        max32690_cn2_uart2="D30ALJPW"
-        max32690_uart3="0409170246dfc09500000000000000000000000097969906"
-    fi
+    sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['wall-e']['sniffer'])"`
 fi
+
+echo "     sniffer board: ${sniffer}"
+sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
+
+BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['max32655'][0])"`
+echo "             BRD1: ${BRD1}"
+
+BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['used_boards']['yingcai-OptiPlex-790']['max32655'][1])"`
+echo "             BRD2: ${BRD2}"
+echo
+
+jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['DAP_sn'])"`
+jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
+DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['con_sn'])"`
+DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['con_sn'])"`
+DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['hci_sn'])"`
+DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['hci_sn'])"`
+
+max32665_daplink=`/usr/bin/python3 -c   "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
+max32665_cn2_uart1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['con_sn'])"`
+max32665_uart0=`/usr/bin/python3 -c     "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['hci_sn'])"`
+
+max32690_daplink=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
+max32690_cn2_uart2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['con_sn'])"`
+max32690_uart3=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['hci_sn'])"`
+
 
 echo "        sniffer_sn: $sniffer_sn"
 echo
@@ -177,6 +128,7 @@ esac
 
 echo "           sniffer: $snifferSerial"
 echo
+unset devSerial_1
 echo "board 1 trace port: $devSerial_1"
 echo "  board 1 HCI port: $devUart3Serial_1"
 echo 
@@ -184,6 +136,16 @@ echo "board 2 trace port: $devSerial_2"
 echo "  board 2 HCI port: $devUart3Serial_2"
 echo 
 
+if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+    ADDR1=00:12:23:34:45:01
+    ADDR2=00:12:23:34:45:02
+else
+    ADDR1=00:13:23:34:45:11
+    ADDR2=00:13:23:34:45:12
+fi
+
 ./venv/bin/python ./ble_test.py --interface ${snifferSerial}-None --device "" \
-    --brd0-addr 00:11:22:33:44:21 --brd1-addr 00:11:22:33:44:22 --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
+    --brd0-addr $ADDR1 --brd1-addr $ADDR2 \
+    --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
+    --tp0 "$devSerial_1" --tp1 $devSerial_2 \
     --time 35 --tshark /usr/bin/tshark
