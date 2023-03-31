@@ -109,10 +109,10 @@ def start_threads(sp0, sp1):
     all_threads.append(terminal_thread)
 
     # prepare the BLE HCI consoles
-    params = {'serialPort': sp0}
+    params = {'serialPort': sp0, 'id': "1"}
     index = terminal_thread.add_hci_parser(params)
     #params['serialPort'] = sp1
-    params = {'serialPort': sp1}
+    params = {'serialPort': sp1, 'id': "2"}
     index = terminal_thread.add_hci_parser(params)
 
     main_thread = threading.Thread(target=start_main, args=(all_threads, terminal_thread))
@@ -147,14 +147,14 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     time.sleep(0.1)
 
     terminal_thd.input_cmd(0, "adv -l 1")
-    #time.sleep(3)
+    time.sleep(2)
 
     terminal_thd.input_cmd(1, "init -l 1 " + addr1)
     time.sleep(3)
 
     #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
     terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
-    #time.sleep(3)
+    time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
     time.sleep(0.1)
@@ -228,13 +228,13 @@ def run_phy_timing_test(args, new_phy):
         brd0_addr = "00:11:22:33:44:21"
     else:
         brd0_addr = args.brd0_addr
-    print(f'board 1 addr: {brd0_addr}')
+    print(f'     board 1 addr: {brd0_addr}')
 
     if args.brd1_addr is None:
         brd1_addr = "00:11:22:33:44:22"
     else:
         brd1_addr = args.brd1_addr
-    print(f'board 2 addr: {brd1_addr}')
+    print(f'     board 2 addr: {brd1_addr}')
 
     if args.time is None:
         timeout = 30

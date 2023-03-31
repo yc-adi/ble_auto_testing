@@ -717,7 +717,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                 logging.info("exiting control loop")
             else:
                 start_time = time.time()
-                msg = f'Start: {time.ctime(start_time)}'
+                msg = f'\nStart: {time.ctime(start_time)}\n'
                 logging.info(msg)
 
                 operation_timeout = False

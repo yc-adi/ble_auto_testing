@@ -53,12 +53,12 @@ echo
 
 FILE=/home/$USER/Workspace/ci_config/boards_config.json
 # get the test boards
-TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/RF-PHY-closed.json
+TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/timing_tests.json
 
 HOST_NAME=`hostname`
-sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['sniffer'])"`
-BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['max32655'][0])"`
-BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['timing_used_boards']['$HOST_NAME']['max32655'][1])"`
+sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"
+BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['']['$HOST_NAME']['max32655'][0])"`
+BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['']['$HOST_NAME']['max32655'][1])"`
 
 echo "     sniffer board: ${sniffer}"
 echo "              BRD1: ${BRD1}"
@@ -144,3 +144,5 @@ unbuffer python3 ble_test.py --interface ${snifferSerial}-None --device "" \
     --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
     --tp0 "$devSerial_1" --tp1 $devSerial_2 \
     --time 35 --tshark /usr/bin/tshark
+
+yes | cp -p output/*.* /tmp/ci_test/timing/
