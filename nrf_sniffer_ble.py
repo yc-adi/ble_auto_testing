@@ -892,11 +892,15 @@ def run_sniffer(params: dict):
         if params["auto_test"]:
             if interface[0] == '/':
                 name = interface[1:].replace("/", "-")
-            name = name + "_" + params["device"] + "_" \
+            else:
+                name = interface.replace("/", "-")
+
+            name = name + "_" + "_" \
                    + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
             # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             base_dir = os.getcwd()
             given_name = os.path.join(base_dir, "output", name)
+            print(f'\ncaptured file saved to: {given_name}\n')
         else:
             given_name = None
 

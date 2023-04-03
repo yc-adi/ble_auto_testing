@@ -16,14 +16,14 @@ fi
 MSDK=$1
 TEST_TIME=$2
 
-#source ~/anaconda3/etc/profile.d/conda.sh
-#conda activate py3_10
+source ~/anaconda3/etc/profile.d/conda.sh
+conda activate py3_10
 
-cd ${MSDK}/ble_auto_testing
-echo "Create the Python env."
-python -m venv venv
-source ./venv/bin/activate
-python -m pip install -r requirements.txt
+#cd ${MSDK}/ble_auto_testing
+#echo "Create the Python env."
+#python -m venv venv
+#source ./venv/bin/activate
+#python -m pip install -r requirements.txt
 
 #--------------------------------------------------------------------------------------------------
 declare -A DUTs
@@ -142,21 +142,23 @@ do
     BRD1_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['DAP_sn'])"`
     BRD2_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['DAP_sn'])"`
     
-    printf "<<<<<< build and flash ${BRD1}\n"
-    set -x
-    bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
-        ${MSDK}                     \
-        /home/$USER/Tools/openocd   \
-        ${BRD1_CHIP_UC}             \
-        ${BRD1_TYPE}                \
-        BLE5_ctr                    \
-        ${BRD1_DAP_SN}              \
-        False                        \
-        False
-    set +x
-    echo
-    
-    printf "<<<<<< build and flash ${BRD2}\n"
+    printf "<<<<<< build and flash ${BRD1}\n\n"
+    if [ $BRD1 != "nRF52840_2" ]; then
+        set -x
+        bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
+            ${MSDK}                     \
+            /home/$USER/Tools/openocd   \
+            ${BRD1_CHIP_UC}             \
+            ${BRD1_TYPE}                \
+            BLE5_ctr                    \
+            ${BRD1_DAP_SN}              \
+            False                        \
+            False
+        set +x
+        echo
+    fi
+
+    printf "<<<<<< build and flash ${BRD2}\n\n"
     set -x
     bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
         ${MSDK}                     \
@@ -165,21 +167,21 @@ do
         ${BRD2_TYPE}                \
         BLE5_ctr                    \
         ${BRD2_DAP_SN}              \
-        False                        \
-        False
+        True                        \
+        True
     set +x
     echo
 
     printf "\n#----------------------------------------------------------------\n"
     printf "# run test"
-    printf "\n#----------------------------------------------------------------\n"
+    printf "\n#----------------------------------------------------------------\n\n"
     SNIFFER=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['sniffer'])"`
     snifferSerial=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${SNIFFER}']['sn'])"`
 
     BRD1_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['hci_id'])"`
-    BRD2_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['hci_id'])"`
+    BRD2_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['hci_id'])"`
     BRD1_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['con_id'])"`
-    BRD2_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['con_id'])"`
+    BRD2_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['con_id'])"`
         
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
         ADDR1=00:12:23:34:45:01
@@ -189,19 +191,31 @@ do
         ADDR2=00:11:22:33:44:22
     fi
 
-    unbuffer python3 ${MSDK}/ble_auto_testing/ble_test.py   \
-        --interface ${snifferSerial}-None --device ""       \
-        --brd0-addr $ADDR1 --brd1-addr $ADDR2               \
-        --sp0 $BRD1_HCI --sp1 $BRD2_HCI                     \
-        --tp0 "$BRD2_CON" --tp1 "$BRD2_CON"                 \
-        --time 35 --tshark /usr/bin/tshark
-
+    set -x
+    NEW_METHOD=0
+    if [ $NEW_METHOD -eq 1 ]; then
+        unbuffer python3 ${MSDK}/ble_auto_testing/timing_test.py    \
+            --interface ${snifferSerial}-None --device ""           \
+            --addr1 $ADDR1 --addr2 $ADDR2                           \
+            --hci1 $BRD1_HCI --hci2 $BRD2_HCI                       \
+            --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
+            --time 35 --tshark /usr/bin/tshark
+    else
+        unbuffer python3 ${MSDK}/ble_auto_testing/ble_test.py       \
+            --interface ${snifferSerial}-None --device ""           \
+            --brd0-addr $ADDR1 --brd1-addr $ADDR2                   \
+            --sp0 $BRD1_HCI --sp1 $BRD2_HCI                         \
+            --tp0 "$BRD1_CON" --tp1 "$BRD2_CON"                     \
+            --time 35 --tshark /usr/bin/tshark
+    fi
+    
+    echo
     yes | cp -p output/*.* /tmp/ci_test/timing/
-
+    set +x
 
     printf "\n#----------------------------------------------------------------\n"
     printf "# release locked resources"
-    printf "\n#----------------------------------------------------------------\n"
+    printf "\n#----------------------------------------------------------------\n\n"
 done
 
 printf "\n\n#------\n"

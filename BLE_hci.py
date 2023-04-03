@@ -166,6 +166,11 @@ class BLE_hci:
     def __init__(self, params):
 
         try:
+            if "id" in params.keys():
+                self.id = params["id"]
+            else:
+                self.id = "-"
+                
             # Open serial port
             serialPort = params["serialPort"]
             self.port = serial.Serial(
@@ -290,10 +295,14 @@ class BLE_hci:
         payload = self.port.read(size=packet_len)
 
         # Print the packet
-        if (print_evt):
-            for i in range(0, packet_len):
-                status_string += '%02X' % payload[i]
-            print(str(datetime.datetime.now()) + " <", status_string)
+        if print_evt and len(payload) > 0:
+            for i in range(0, len(payload)):
+                status_string += '%02X'%payload[i]
+
+            if self.id == "-":
+                print(str(datetime.datetime.now()) + "  <", status_string)
+            else:
+                print(str(datetime.datetime.now()) + f" {self.id}<", status_string)
 
         return status_string
 
@@ -318,8 +327,11 @@ class BLE_hci:
     ################################################################################
     def send_command(self, packet, resp=True, delay=0.01, print_cmd=True):
         # Send the command and data
-        if (print_cmd):
-            print(str(datetime.datetime.now()) + " >", packet)
+        if(print_cmd):
+            if self.id == "-":
+                print(str(datetime.datetime.now()) + "  >", packet)
+            else:
+                print(str(datetime.datetime.now()) + f" {self.id}>", packet)
 
         self.port.write(bytearray.fromhex(packet))
         sleep(delay)
@@ -346,6 +358,7 @@ class BLE_hci:
             i += 8
             errTrans = int(evt[6 + i:8 + i] + evt[4 + i:6 + i] + evt[2 + i:4 + i] + evt[0 + i:2 + i], 16)
         except ValueError as err:
+            print(f'{self.id}: {evt}')
             print(err)
             return None
 
@@ -375,10 +388,10 @@ class BLE_hci:
                 msg = msg.replace("\r\n", "")
                 if msg != "":
                     if first:
-                        print(f'\n{str(datetime.datetime.now())} - {msg}')
+                        print(f'\n{str(datetime.datetime.now())} {self.id}  {msg}')
                         first = False
                     else:
-                        print(f'{str(datetime.datetime.now())} - {msg}')
+                        print(f'{str(datetime.datetime.now())} {self.id}  {msg}')
 
 
     ## Get connection stats.
