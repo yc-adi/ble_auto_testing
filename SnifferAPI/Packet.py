@@ -74,7 +74,7 @@ test_log = open("test_packet_info.log", "w")
 test_tifs_log = open("test_tifs_log.log", "w")
 
 all_tifs = list()
-print(f'Address of all_tifs: {id(all_tifs)}')
+print(f'\nall_tifs @ {id(all_tifs)}')
 
 # PHY switching state
 PHY_SW_ST_INIT = 0

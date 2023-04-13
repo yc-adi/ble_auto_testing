@@ -159,7 +159,7 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(0, "reset")
     time.sleep(0.1)
     terminal_thd.input_cmd(1, "reset")
-    time.sleep(0.1)
+    time.sleep(1)
 
     terminal_thd.input = "exit"
 
@@ -301,7 +301,7 @@ def check_results(new_phy):
 
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs} at {all_tifs.index(max_tifs)}, '
               f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
-        print(f'Address of all_tifs: {id(all_tifs)}')
+        print(f'\nall_tifs @ {id(all_tifs)}')
 
         print("\n\n-------------------------------------------------------------------")
         if max_tifs <= 152 and min_tifs >= 148:

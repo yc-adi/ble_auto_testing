@@ -117,17 +117,20 @@ do
     BRD1_LOCK=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['lockfile'])"`
     BRD2_LOCK=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['lockfile'])"`
 
-    printf "\nTry to lock the files...\n"    
-    python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -l -t 3600 -b ${BRD1_LOCK} -b ${BRD2_LOCK}
-    if [ $? -ne 0 ]; then
-        printf "\nFail to acquire the resources.\n"
-        continue
-    fi
+    if [ $HOST_NAME == "wall-e" ]; then
+        printf "\nTry to lock the files...\n"    
+        python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -l -t 3600 -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+        if [ $? -ne 0 ]; then
+            printf "\nFail to acquire the resources.\n"
+            continue
+        fi
 
-    LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
-    touch $LOCK_FILE
-    echo "python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}" >> $LOCK_FILE
-    bash -x -c "cat $LOCK_FILE"
+
+        LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
+        touch $LOCK_FILE
+        echo "python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}" >> $LOCK_FILE
+        bash -x -c "cat $LOCK_FILE"
+    fi
 
     printf "\n#----------------------------------------------------------------\n"
     printf "# Build the project and flash the board"
@@ -142,7 +145,7 @@ do
     BRD1_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['DAP_sn'])"`
     BRD2_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['DAP_sn'])"`
     
-    printf "<<<<<< build and flash ${BRD1}\n\n"
+    printf "<<<<<< build and flash the first board: ${BRD1}\n\n"
     if [ $BRD1 != "nRF52840_2" ]; then
         set -x
         bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
@@ -152,13 +155,13 @@ do
             ${BRD1_TYPE}                \
             BLE5_ctr                    \
             ${BRD1_DAP_SN}              \
-            False                        \
-            False
+            True                        \
+            True
         set +x
         echo
     fi
 
-    printf "<<<<<< build and flash ${BRD2}\n\n"
+    printf "<<<<<< build and flash the 2nd board: ${BRD2}\n\n"
     set -x
     bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
         ${MSDK}                     \
@@ -192,7 +195,7 @@ do
     fi
 
     set -x
-    NEW_METHOD=0
+    NEW_METHOD=1
     if [ $NEW_METHOD -eq 1 ]; then
         unbuffer python3 ${MSDK}/ble_auto_testing/timing_test.py    \
             --interface ${snifferSerial}-None --device ""           \

@@ -895,7 +895,7 @@ def run_sniffer(params: dict):
             else:
                 name = interface.replace("/", "-")
 
-            name = name + "_" + "_" \
+            name = name + "_" \
                    + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
             # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             base_dir = os.getcwd()

@@ -336,6 +336,8 @@ class BLE_hci:
         self.port.write(bytearray.fromhex(packet))
         sleep(delay)
 
+        sleep(0.2)
+
         if (resp):
             return self.wait_event()
 

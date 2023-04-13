@@ -179,7 +179,14 @@ def run_test(inputs, new_phy):
     sleep(0.2)
     print("\nmaster reset")
     mst_hci.resetFunc(None)
+    sleep(1)
+
+    print("\nslave exit")
+    slv_hci.exitFunc(None)
     sleep(0.2)
+    print("\nmaster exit")
+    mst_hci.exitFunc(None)
+    sleep(1)
 
     print(f"\ntest on phy: {new_phy} done\n")
 
