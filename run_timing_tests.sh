@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
+
 FORMAT="run_timing_test.sh 1MSDK 2TEST_TIME"
+
 printf "\n#########################################################################################\n"
 printf "# ${FORMAT}\n"
 printf "#########################################################################################\n"
 
 echo $0 $@
 echo
-printf "$0 $@\n\n"
 
 if [ $# -ne 2 ]; then
     printf "Invalid command. \"${FORMAT}\"\n\n"
@@ -25,6 +26,9 @@ conda activate py3_10
 #source ./venv/bin/activate
 #python -m pip install -r requirements.txt
 
+mkdir -p /tmp/ci_test/timing/
+rm ${MSDK}/ble_auto_testing/output/*.*
+
 #--------------------------------------------------------------------------------------------------
 declare -A DUTs
 DUT_num=4
@@ -39,12 +43,13 @@ DUTs[3,1]=WLP_V1
 
 CONFIG_FILE=~/Workspace/ci_config/timing_tests.json
 CI_TEST=ble_timing_verify.yml
+
 echo "cat ${CONFIG_FILE}"
 cat ${CONFIG_FILE}
 echo
 
 HOST_NAME=`hostname`
-# skip file change check
+# skip FCC(file change check) or not
 SKIP_FCC=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
 printf "SKIP_FCC: ${SKIP_FCC}\n\n"
 
@@ -59,7 +64,7 @@ do
     echo "#----------------------------------------------------------------------------------------------------"
     echo
     set +e
-    bash $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/rf_phy_timing_test_file_change_check.sh \
+    bash ${MSDK}/ble_auto_testing/rf_phy_timing_test_file_change_check.sh \
         $SKIP_FCC \
         $MSDK     \
         $CHIP_UC  \
@@ -146,7 +151,11 @@ do
     BRD2_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['DAP_sn'])"`
     
     printf "<<<<<< build and flash the first board: ${BRD1}\n\n"
-    if [ $BRD1 != "nRF52840_2" ]; then
+    if [[ $BRD1 =~ "nRF52840_" ]]; then
+        IS_NRF=1
+        printf "Don't program the nRF52840 board.\n\n"
+    else
+        IS_NRF=0
         set -x
         bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
             ${MSDK}                     \
@@ -175,17 +184,33 @@ do
     set +x
     echo
 
+    sleep 5
+
     printf "\n#----------------------------------------------------------------\n"
     printf "# run test"
     printf "\n#----------------------------------------------------------------\n\n"
     SNIFFER=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['sniffer'])"`
-    snifferSerial=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${SNIFFER}']['sn'])"`
+    printf "      SNIFFER: $SNIFFER\n"
+    sniffer_sn=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${SNIFFER}']['sn'])"`
+    printf "   sniffer_sn: $sniffer_sn\n"
+    snifferSerial=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
+    printf "snifferSerial: $snifferSerial\n\n"
 
     BRD1_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['hci_id'])"`
-    BRD2_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['hci_id'])"`
-    BRD1_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['con_id'])"`
+    printf "     BRD1_HCI: $BRD1_HCI\n"
+    if [ $IS_NRF -eq 1 ]; then
+        BRD1_CON=
+        printf "     BRD1_CON: $BRD1_CON\n"
+    else
+        BRD1_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['con_id'])"`
+        printf "     BRD1_CON: $BRD1_CON\n"
+    fi
+
+    BRD2_HCI=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['hci_id'])"`    
+    printf "     BRD2_HCI: $BRD2_HCI\n"
     BRD2_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['con_id'])"`
-        
+    printf "     BRD2_CON: $BRD2_CON\n"
+
     if [ `hostname` == "yingcai-OptiPlex-790" ]; then
         ADDR1=00:12:23:34:45:01
         ADDR2=00:12:23:34:45:02
@@ -202,7 +227,7 @@ do
             --addr1 $ADDR1 --addr2 $ADDR2                           \
             --hci1 $BRD1_HCI --hci2 $BRD2_HCI                       \
             --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
-            --time 35 --tshark /usr/bin/tshark
+            --time 40 --tshark /usr/bin/tshark
     else
         unbuffer python3 ${MSDK}/ble_auto_testing/ble_test.py       \
             --interface ${snifferSerial}-None --device ""           \

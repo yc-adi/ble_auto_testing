@@ -1,0 +1,18 @@
+~/MaximSDK/Tools/OpenOCD/openocd -s ~/MaximSDK/Tools/OpenOCD/scripts -f interface/cmsis-dap_max32655_y1.cfg -f target/MAX32655.cfg -c "tcl_port 6666; telnet_port 4444; gdb_port 3333"
+~/MaximSDK/Tools/OpenOCD/openocd -s ~/MaximSDK/Tools/OpenOCD/scripts -f interface/cmsis-dap_max32655_y2.cfg -f target/MAX32655.cfg -c "tcl_port 6667; telnet_port 4445; gdb_port 3334"
+
+~/MaximSDK/Tools/OpenOCD/openocd -s ~/MaximSDK/Tools/OpenOCD/scripts -f interface/cmsis-dap_max32690_a5.cfg -f target/MAX32690.cfg -c "tcl_port 6666; telnet_port 4444; gdb_port 3333"
+
+# ble_auto_testing	
+python per_test.py --sp0 /dev/ttyUSB4 --tp0 /dev/ttyUSB0 --sp1 /dev/ttyUSB7 --tp1 /dev/ttyUSB6
+
+### Flash the nRF52840 
+cd Libraries/Cordio/controller/build/ble5-ctr/gcc/ 
+export PLATFORM=nordic 
+unset BOARD 
+make clean 
+make all -j8 
+make install 
+
+
+	

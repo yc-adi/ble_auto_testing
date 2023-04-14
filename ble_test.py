@@ -292,7 +292,7 @@ def check_results(new_phy):
     # check T_IFS
     #
     if len(all_tifs) > 0:
-        first_readings = min(50, len(all_tifs))
+        first_readings = min(20, len(all_tifs))
         print(f'The first {first_readings} readings:\n{all_tifs[0:first_readings]}')
 
         max_tifs = max(all_tifs)
