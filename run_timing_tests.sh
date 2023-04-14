@@ -220,22 +220,13 @@ do
     fi
 
     set -x
-    NEW_METHOD=1
-    if [ $NEW_METHOD -eq 1 ]; then
-        unbuffer python3 ${MSDK}/ble_auto_testing/timing_test.py    \
-            --interface ${snifferSerial}-None --device ""           \
-            --addr1 $ADDR1 --addr2 $ADDR2                           \
-            --hci1 $BRD1_HCI --hci2 $BRD2_HCI                       \
-            --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
-            --time 40 --tshark /usr/bin/tshark
-    else
-        unbuffer python3 ${MSDK}/ble_auto_testing/ble_test.py       \
-            --interface ${snifferSerial}-None --device ""           \
-            --brd0-addr $ADDR1 --brd1-addr $ADDR2                   \
-            --sp0 $BRD1_HCI --sp1 $BRD2_HCI                         \
-            --tp0 "$BRD1_CON" --tp1 "$BRD2_CON"                     \
-            --time 35 --tshark /usr/bin/tshark
-    fi
+
+    unbuffer python3 ${MSDK}/ble_auto_testing/timing_test.py    \
+        --interface ${snifferSerial}-None --device ""           \
+        --addr1 $ADDR1 --addr2 $ADDR2                           \
+        --hci1 $BRD1_HCI --hci2 $BRD2_HCI                       \
+        --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
+        --time 40 --tshark /usr/bin/tshark
     
     echo
     yes | cp -p output/*.* /tmp/ci_test/timing/
