@@ -189,7 +189,7 @@ if __name__ == "__main__":
 
     interface = inputs.interface
     device = inputs.device
-
+b
     ble_thd = Thread(target=run_test, args=(inputs, 1,))
 
     ble_thd.start()

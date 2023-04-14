@@ -23,7 +23,8 @@ else
         ;;
 
         3)
-            echo "The 2nd board is MAX32690."
+            BRD_AND_TYPE=max32690_evkit_v1
+            echo "The 2nd board is max32690_evkit_v1."
         ;;
 
         *)
@@ -56,9 +57,9 @@ FILE=/home/$USER/Workspace/ci_config/boards_config.json
 TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/timing_tests.json
 
 HOST_NAME=`hostname`
-sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"
-BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['']['$HOST_NAME']['max32655'][0])"`
-BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['']['$HOST_NAME']['max32655'][1])"`
+sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"`
+BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['$BRD_AND_TYPE']['board1'])"`
+BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['$BRD_AND_TYPE']['board2'])"`
 
 echo "     sniffer board: ${sniffer}"
 echo "              BRD1: ${BRD1}"
@@ -131,7 +132,7 @@ echo "board 2 trace port: $devSerial_2"
 echo "  board 2 HCI port: $devUart3Serial_2"
 echo 
 
-if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+if [ $HOSTNAME == "yingcai-OptiPlex-790" ]; then
     ADDR1=00:12:23:34:45:01
     ADDR2=00:12:23:34:45:02
 else
