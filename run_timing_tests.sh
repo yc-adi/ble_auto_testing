@@ -27,7 +27,9 @@ conda activate py3_10
 #python -m pip install -r requirements.txt
 
 mkdir -p /tmp/ci_test/timing/
-rm ${MSDK}/ble_auto_testing/output/*.*
+rm ${MSDK}/ble_auto_testing/output/*.pc*
+rm ${MSDK}/ble_auto_testing/output/sniffer.log
+
 
 #--------------------------------------------------------------------------------------------------
 declare -A DUTs
@@ -228,6 +230,12 @@ do
         --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
         --time 40 --tshark /usr/bin/tshark
     
+    if [ $? -eq 0 ]; then
+        PASS=1
+    else
+        PASS=0
+    fi
+
     echo
     yes | cp -p output/*.* /tmp/ci_test/timing/
     set +x
@@ -235,6 +243,11 @@ do
     printf "\n#----------------------------------------------------------------\n"
     printf "# release locked resources"
     printf "\n#----------------------------------------------------------------\n\n"
+    # TODO
+
+    if [ $PASS -eq 0 ]; then
+        break
+    fi
 done
 
 printf "\n\n#------\n"

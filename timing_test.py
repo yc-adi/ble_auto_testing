@@ -34,7 +34,6 @@
  ###############################################################################
 
 import argparse
-from ble_auto_testing import convert_pcap_to_pcapng
 from BLE_hci import BLE_hci
 from BLE_hci import Namespace
 import datetime
@@ -180,9 +179,15 @@ def run_test(inputs, new_phy):
     mst_hci.initFunc(Namespace(interval="6", timeout="64", addr=inputs.addr2, stats="False", maintain=False, listen="False"))
     sleep(4)
 
-    print(f'\nslave changes the PHY to {new_phy}')
-    slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
-    sleep(6)
+    #print(f'\nslave changes the PHY to {new_phy}')
+    #slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
+    print(f'\nmaster changes the PHY to {new_phy}')
+    mst_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
+    sleep(5)
+
+    print(f'\nmaster changes the PHY to 1')
+    mst_hci.phyFunc(Namespace(phy=str(1), timeout=1))
+    sleep(5)
 
     print("\nmaster reset")
     mst_hci.resetFunc(None)
@@ -339,9 +344,10 @@ if __name__ == "__main__":
 
 
         if res > 0:
-            pass
+            exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")
+    exit(0)
 
 
     
