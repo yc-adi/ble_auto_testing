@@ -34,10 +34,9 @@
  ###############################################################################
 
 import argparse
-from BLE_hci import BLE_hci
 from BLE_hci import Namespace
 import datetime
-from nrf_sniffer_ble import run_sniffer as exe_sniffer
+from nrf_sniffer_ble import run_sniffer_with_hci
 import os
 from pcapng_file_parser import parse_pcapng_file, all_tifs
 from pprint import pprint
@@ -45,7 +44,6 @@ from SnifferAPI import Packet
 from subprocess import Popen, PIPE
 import statistics
 from time import sleep
-from threading import Thread
 
 
 sniffer_res = dict()
@@ -73,7 +71,7 @@ def get_args():
     return args
 
 
-def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int) -> dict:
+def run_hci_and_sniffer(inputs: Namespace):
     """Run the BLE packet sniffer on specified interface and device
 
         Example command:
@@ -131,59 +129,31 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     params["capture"] = True
     params["coded"] = False
     params["extcap_interfaces"] = False
-    params["extcap_interface"] = interface_name
+    params["extcap_interface"] = inputs.interface
     params["auto_test"] = True
-    params["device"] = device_name
+    params["device"] = inputs.device
     params["baudrate"] = None
     params["fifo"] = "FIFO"
     params["extcap_control_in"] = "EXTCAP_CONTROL_IN"
     params["extcap_control_out"] = "EXTCAP_CONTROL_OUT"
-    params["timeout"] = timeout
-    params["dev_addr"] = dev_adv_addr
+    params["timeout"] = inputs.time
+    params["dev_addr"] = inputs.addr2
 
     print(f'\nparams:')
     pprint(params)
 
-    sniffer_res['pcap_file_name'] = exe_sniffer(params)
+    sniffer_res['pcap_file_name'] = run_sniffer_with_hci(inputs, params)
 
-    print(f'sniffer_res:');
+    print(f'sniffer_res:')
     pprint(sniffer_res)
-    print(f'\n--- sniffer done!\n')
+    print(f'\n--- sniffer: Done!\n')
 
 
 def run_test(inputs, new_phy):
-    sleep(2)
+
     
-    slv_hci = BLE_hci({"serialPort": inputs.hci2, "monPort": inputs.mon2, "baud": 115200, "id": 2})
-    mst_hci = BLE_hci({"serialPort": inputs.hci1, "monPort": inputs.mon1, "baud": 115200, "id": 1})
 
-    print("\nslave reset")
-    slv_hci.resetFunc(None)
-    sleep(1)
-    print("\nmaster reset")
-    mst_hci.resetFunc(None)
-    sleep(0.2)
 
-    print(f"\nset slave address: {inputs.addr2}")
-    slv_hci.addrFunc(Namespace(addr=inputs.addr2))
-    sleep(0.2)
-    print(f"\nset master address: {inputs.addr1}")
-    mst_hci.addrFunc(Namespace(addr=inputs.addr1))
-    sleep(0.2)
-
-    print("\nslave starts adv")
-    slv_hci.advFunc(Namespace(interval="60", stats="False", connect="True", maintain=False, listen="False"))
-    sleep(1.0)
-
-    print("\nmaster starts to connect")
-    mst_hci.initFunc(Namespace(interval="6", timeout="64", addr=inputs.addr2, stats="False", maintain=False, listen="False"))
-    sleep(4)
-
-    #print(f'\nslave changes the PHY to {new_phy}')
-    #slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
-    print(f'\nmaster changes the PHY to {new_phy}')
-    mst_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
-    sleep(5)
 
     print(f'\nmaster changes the PHY to 1')
     mst_hci.phyFunc(Namespace(phy=str(1), timeout=1))
@@ -208,8 +178,8 @@ def run_test(inputs, new_phy):
 
 def parse_phy_timing_test_results(captured_file: str):
     file_type = 1  # see parse_pcapng_file() description
-    res = parse_pcapng_file(file_type, captured_file)
-    return res
+    parse_res = parse_pcapng_file(file_type, captured_file)
+    return parse_res
 
 
 def check_results(new_phy):
@@ -305,23 +275,25 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
 
 
 def run_test_on_phy(inputs, phy):
-    ble_thd = Thread(target=run_test, args=(inputs, phy,))
-    ble_thd.start()
-
+    """this function will control the two DUT boards to start the BLE DTM test and start the sniffer
+        to capture the packets.
+    """
     # the captured file info will be saved in sniffer_res['pcap_file_name']
-    run_sniffer(inputs.interface, inputs.device, inputs.addr2, inputs.time)
+    inputs.new_phy = phy
+    run_hci_and_sniffer(inputs)
 
     pcap_file = sniffer_res['pcap_file_name']
+    print(f'Processing the captured file: {pcap_file}')
     if os.path.exists(pcap_file):
-        print("convert pcap file to pcapng format")
         pcapng_file = pcap_file.replace(".pcap", ".pcapng")
+        print(f'convert pcap file to pcapng format: {pcapng_file}')
         convert_pcap_to_pcapng(pcap_file, pcapng_file, inputs.tshark)
     else:
         return 1
 
     parse_phy_timing_test_results(pcapng_file)
-    res = check_results(phy)
-    return res
+    check_res = check_results(phy)
+    return check_res
 
 
 if __name__ == "__main__":
@@ -342,12 +314,9 @@ if __name__ == "__main__":
             sleep(1)
             print(f'======\nFAILED {tried} times.\n======')
 
-
         if res > 0:
             exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")
     exit(0)
 
-
-    

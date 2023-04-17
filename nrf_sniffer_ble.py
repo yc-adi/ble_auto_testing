@@ -40,12 +40,15 @@
 """
 Wireshark extcap wrapper for the nRF Sniffer for Bluetooth LE by Nordic Semiconductor.
 """
+from BLE_hci import BLE_hci
+from BLE_hci import Namespace
 import datetime
 import os
 import sys
 import argparse
 import re
 import time
+from time import sleep
 import struct
 import logging
 from pprint import pprint
@@ -626,7 +629,7 @@ def teardown_extcap_log_handler():
 
 
 def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_test=False, timeout=120, given_name=None,
-                    target_device=None, target_given_addr=None):
+                    target_device=None, target_given_addr=None, mst_hci=None, slv_hci=None, new_phy=2):
     """Start the sniffer to capture packets"""
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
@@ -676,7 +679,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             # First read initial control values
             if auto_test:
                 # Get the target device address
-                print(f'Try to find the target board0 with address: {target_given_addr}.')
+                print(f'Try to find the target board 2 with address: {target_given_addr}.')
                 tried = 0
                 while tried < 15:
                     time.sleep(1)
@@ -686,6 +689,33 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                               f'found the target device "{target_device}" address: {target_dev_addr}\n'
                         print(msg)
                         logging.info(msg)
+
+                        print(f"\nmaster: start to connect {target_given_addr}")
+                        mst_hci.initFunc(
+                            Namespace(interval="6", timeout="64", addr=target_given_addr, stats="False", maintain=False,
+                                      listen="False"))
+                        sleep(0.5)
+
+                        print("\nSlave and master listenFunc")
+                        slv_hci.listenFunc(Namespace(time=1, stats="False"))
+                        mst_hci.listenFunc(Namespace(time=1, stats="False"))
+
+                        print("\nSlave and master dataLenFunc")
+                        slv_hci.dataLenFunc(None)
+                        mst_hci.dataLenFunc(None)
+
+                        print("\nSlave listenFunc")
+                        slv_hci.listenFunc(Namespace(time=1, stats="False"))
+
+                        # print(f'\nslave changes the PHY to {new_phy}')
+                        # slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
+                        print(f'\nmaster: change PHY to {new_phy}')
+                        mst_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
+                        mst_hci.listenFunc(Namespace(time=2, stats="False"))
+                        sleep_secs = 5
+                        print(f'sleep {sleep_secs}')
+                        sleep(sleep_secs)
+
                         break
                     tried += 1
                     print(f'Tried {tried} times to find the target device "{target_device}".')
@@ -695,6 +725,8 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                     print(msg)
                     logging.info(msg)
                     sniffer.doExit("sniffer_capture(), fn_ctr_in/out")
+                    mst_hci.resetFunc(None)
+                    slv_hci.resetFunc(None)
                     raise Exception
 
                 control_read_initial_values(sniffer, auto_test=auto_test, device_address=target_dev_addr)
@@ -876,16 +908,40 @@ def goodbye():
     logging.info("Exiting PID {}".format(os.getpid()))
 
 
-def run_sniffer(params: dict):
+def run_sniffer_with_hci(inputs: Namespace, params: dict):
     """Run the sniffer with input arguments
 
         Args:
+            inputs: the user input args
             params: the dict from input arguments
 
         Returns:
             pcap file name
     """
     interface = params["extcap_interface"]
+    if inputs.mon1 == "''":
+        inputs.mon1 = ""
+
+    slv_hci = BLE_hci({"serialPort": inputs.hci2, "monPort": inputs.mon2, "baud": 115200, "id": 2})
+    mst_hci = BLE_hci({"serialPort": inputs.hci1, "monPort": inputs.mon1, "baud": 115200, "id": 1})
+
+    print("\nslave: reset")
+    slv_hci.resetFunc(None)
+    sleep(1)
+    print("\nmaster: reset")
+    mst_hci.resetFunc(None)
+    sleep(0.2)
+
+    print(f"\nslave: set address {inputs.addr2}")
+    slv_hci.addrFunc(Namespace(addr=inputs.addr2))
+    sleep(0.2)
+    print(f"\nmaster: set address {inputs.addr1}")
+    mst_hci.addrFunc(Namespace(addr=inputs.addr1))
+    sleep(0.2)
+
+    print("\nslave: starts adv")
+    slv_hci.advFunc(Namespace(interval="60", stats="False", connect="True", maintain=False, listen="False"))
+    sleep(1.0)
 
     try:
         logging.info(f'sniffer capture: {params}')
@@ -895,9 +951,7 @@ def run_sniffer(params: dict):
             else:
                 name = interface.replace("/", "-")
 
-            name = name + "_" \
-                   + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
-            # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            name = name + "_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
             base_dir = os.getcwd()
             given_name = os.path.join(base_dir, "output", name)
             print(f'\ncaptured file saved to: {given_name}\n')
@@ -907,7 +961,8 @@ def run_sniffer(params: dict):
         sniffer_capture(interface, params["baudrate"], params["fifo"], params["extcap_control_in"],
                         params["extcap_control_out"], auto_test=params["auto_test"],
                         timeout=params["timeout"], given_name=given_name,
-                        target_device=params["device"], target_given_addr=params["dev_addr"])
+                        target_device=params["device"], target_given_addr=params["dev_addr"],
+                        mst_hci=mst_hci, slv_hci=slv_hci, new_phy=inputs.new_phy)
     except KeyboardInterrupt:
         pass
     except Exception as e:
@@ -1052,5 +1107,6 @@ if __name__ == '__main__':
     args = parse_args()
     params = vars(args)
 
-    pcap_file_name = run_sniffer(params)
+    inputs = Namespace()
+    pcap_file_name = run_sniffer_with_hci(inputs, params)
     print(pcap_file_name)
