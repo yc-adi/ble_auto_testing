@@ -25,6 +25,8 @@ conda activate py3_10
 #source ./venv/bin/activate
 #python -m pip install -r requirements.txt
 
+rm $MSDK/ble_auto_testing/*
+
 #--------------------------------------------------------------------------------------------------
 declare -A DUTs
 DUT_num=4
@@ -59,13 +61,14 @@ do
     echo "#----------------------------------------------------------------------------------------------------"
     echo
     set +e
-    bash $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/rf_phy_timing_test_file_change_check.sh \
-        $SKIP_FCC \
-        $MSDK     \
-        $CHIP_UC  \
-        $BRD_TYPE
+    #bash $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/rf_phy_timing_test_file_change_check.sh \
+    #    $SKIP_FCC \
+    #    $MSDK     \
+    #    $CHIP_UC  \
+    #    $BRD_TYPE
 
-    RETVAL=$?
+    #RETVAL=$?
+    RETVAL=0
     set -e
 
     if [[ $RETVAL -eq 0 ]]; then
@@ -118,16 +121,16 @@ do
     BRD2_LOCK=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['lockfile'])"`
 
     printf "\nTry to lock the files...\n"    
-    python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -l -t 3600 -b ${BRD1_LOCK} -b ${BRD2_LOCK}
-    if [ $? -ne 0 ]; then
-        printf "\nFail to acquire the resources.\n"
-        continue
-    fi
+    #python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -l -t 3600 -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+    #if [ $? -ne 0 ]; then
+    #    printf "\nFail to acquire the resources.\n"
+    #    continue
+    #fi
 
-    LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
-    touch $LOCK_FILE
-    echo "python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}" >> $LOCK_FILE
-    bash -x -c "cat $LOCK_FILE"
+    #LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
+    #touch $LOCK_FILE
+    #echo "python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}" >> $LOCK_FILE
+    #bash -x -c "cat $LOCK_FILE"
 
     printf "\n#----------------------------------------------------------------\n"
     printf "# Build the project and flash the board"
