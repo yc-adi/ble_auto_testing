@@ -47,6 +47,7 @@ from os.path import exists
 from SnifferAPI import Packet
 from SnifferAPI.Packet import all_tifs
 from pcapng_file_parser import parse_pcapng_file
+from pprint import pprint
 from queue import Queue
 import shutil
 import statistics
@@ -56,7 +57,7 @@ import time
 import threading
 
 
-RETRY_LIMIT = 3
+RETRY_LIMIT = 1
 
 q = Queue()  # used to share data between threads
 
@@ -99,7 +100,7 @@ def start_main(all_thds, term_thd):
     print(f"{datetime.datetime.now()} - All threads are terminated.")
 
 
-def start_threads(sp0, sp1):
+def start_threads(sp0, sp1, tp0, tp1):
     stdout = sys.stdout  # store it
     sys.stdout = TeeTextIO(sys.stdout)  # apply the TEE function
 
@@ -109,10 +110,10 @@ def start_threads(sp0, sp1):
     all_threads.append(terminal_thread)
 
     # prepare the BLE HCI consoles
-    params = {'serialPort': sp0, 'id': "1"}
+    params = {'serialPort': sp0, 'monPort': tp0, 'id': "1"}
     index = terminal_thread.add_hci_parser(params)
     #params['serialPort'] = sp1
-    params = {'serialPort': sp1, 'id': "2"}
+    params = {'serialPort': sp1, 'monPort': tp1, 'id': "2"}
     index = terminal_thread.add_hci_parser(params)
 
     main_thread = threading.Thread(target=start_main, args=(all_threads, terminal_thread))
@@ -251,7 +252,7 @@ def run_phy_timing_test(args, new_phy):
     else:
         sp1 = args.sp1
 
-    term_thread = start_threads(sp0, sp1)
+    term_thread = start_threads(sp0, sp1, args.tp0, args.tp1)
 
     sniffer_thd = threading.Thread(target=run_sniffer, args=(interface, device, brd0_addr, timeout, q))
     sniffer_thd.daemon = True
@@ -377,6 +378,8 @@ def full_test(args, parse_captured_file, new_phy):
 if __name__ == "__main__":
     parse_captured_file = False
     args = get_args()
+    print(f'\nargs:')
+    pprint(f'{vars(args)}\n')
 
     if parse_captured_file:
         new_phy_range = 3

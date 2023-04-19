@@ -885,6 +885,13 @@ def run_sniffer(params: dict):
         Returns:
             pcap file name
     """
+    print(f'\n<<<<<< nrf_sniffer_ble.py, run_sniffer()\n')
+    print(f'       capture_only_advertising: {capture_only_advertising}')
+    print(f'capture_only_legacy_advertising: {capture_only_legacy_advertising}')
+    print(f'          capture_scan_response: {capture_scan_response}')
+    print(f'       capture_scan_aux_pointer: {capture_scan_aux_pointer}')
+    print(f'                  capture_coded: {capture_coded}')
+
     interface = params["extcap_interface"]
 
     try:
