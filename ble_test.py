@@ -56,7 +56,7 @@ import time
 import threading
 
 
-RETRY_LIMIT = 3
+RETRY_LIMIT = 1
 
 q = Queue()  # used to share data between threads
 
@@ -146,13 +146,18 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(1, "addr " + addr2)
     time.sleep(0.1)
 
+#    terminal_thd.input_cmd(0, f"phy {new_phy}")
+#    time.sleep(0.2)
+#    terminal_thd.input_cmd(1, f"phy {new_phy}")
+#    time.sleep(0.2)
+    
     terminal_thd.input_cmd(0, "adv -l 1")
     time.sleep(2)
 
     terminal_thd.input_cmd(1, "init -l 1 " + addr1)
     time.sleep(3)
 
-    #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
+    #terminal_thd.input_cmd(0, f"phy {new_phy}")  # the PHY switching time is about 59.7 ms.
     terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
     time.sleep(3)
 

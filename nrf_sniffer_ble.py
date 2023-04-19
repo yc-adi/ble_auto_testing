@@ -130,7 +130,7 @@ capture_only_advertising = False
 capture_only_legacy_advertising = False
 capture_scan_response = True
 capture_scan_aux_pointer = True
-capture_coded = False
+capture_coded = True
 
 
 def extcap_config(interface):
@@ -390,7 +390,7 @@ def scan_for_devices(sniffer):
     if sniffer.state == 2:
         log = "Scanning all advertising devices"
         logging.info(log)
-        sniffer.scan(capture_scan_response, capture_scan_aux_pointer, capture_coded)
+        sniffer.scan(capture_scan_response, capture_scan_aux_pointer, True)
 
     in_follow_mode = False
 
@@ -409,7 +409,7 @@ def follow_device(sniffer, device):
     """Follow the selected device"""
     global in_follow_mode
 
-    sniffer.follow(device, capture_only_advertising, capture_only_legacy_advertising, capture_coded)
+    sniffer.follow(device, capture_only_advertising, capture_only_legacy_advertising, True)
     time.sleep(.1)
 
     in_follow_mode = True
@@ -631,6 +631,8 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
     global fn_capture, fn_ctrl_in, fn_ctrl_out, write_new_packets, extcap_log_handler
 
     sniffer = None
+    
+    capture_coded = True
 
     try:
         fn_capture = open(fifo, 'wb', 0)
@@ -669,7 +671,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         sniffer.start()
         logging.info(f"sniffer started. auto_test: {auto_test}")
 
-        sniffer.scan(capture_scan_response, capture_scan_aux_pointer, capture_coded)
+        sniffer.scan(capture_scan_response, capture_scan_aux_pointer, True)
         logging.info("scanning started")
 
         if fn_ctrl_in is not None and fn_ctrl_out is not None:
@@ -1001,6 +1003,10 @@ def parse_args():
         extcap_close_fifo(fifo)
         sys.exit(ERROR_ARG)
 
+    
+    print('\nargs:')
+    pprint(f'{vars(args)}\n')
+
     if len(sys.argv) <= 1:
         parser.exit("No arguments given!")
 
@@ -1045,12 +1051,15 @@ def parse_args():
         parser.print_help()
         sys.exit(ERROR_FIFO)
 
+    print('\nargs:')
+    pprint(f'{vars(args)}\n')
+
     return args
 
 
 if __name__ == '__main__':
     args = parse_args()
     params = vars(args)
-
+    exit(0)
     pcap_file_name = run_sniffer(params)
     print(pcap_file_name)
