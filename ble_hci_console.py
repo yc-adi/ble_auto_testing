@@ -152,17 +152,18 @@ class BleHciConsole:
 
             self.trace_port = None                
             if "monPort" in params.keys():
-                self.trace_port = serial.Serial(
-                    port=str(params["monPort"]),
-                    baudrate=baudrate,
-                    parity=serial.PARITY_NONE,
-                    stopbits=serial.STOPBITS_ONE,
-                    bytesize=serial.EIGHTBITS,
-                    rtscts=False,
-                    dsrdtr=False,
-                    timeout=1.0
-                )
-                self.trace_port.isOpen()
+                if params["monPort"] != "" and params["monPort"] != "\'\'":
+                    self.trace_port = serial.Serial(
+                        port=str(params["monPort"]),
+                        baudrate=baudrate,
+                        parity=serial.PARITY_NONE,
+                        stopbits=serial.STOPBITS_ONE,
+                        bytesize=serial.EIGHTBITS,
+                        rtscts=False,
+                        dsrdtr=False,
+                        timeout=1.0
+                    )
+                    self.trace_port.isOpen()
 
         except serial.SerialException as err:
             print(err)

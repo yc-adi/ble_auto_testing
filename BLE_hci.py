@@ -185,10 +185,10 @@ class BLE_hci:
             )
             self.port.isOpen()
 
-            if params["monPort"] == "":
+            if params["monPort"] == "" or params["monPort"] == "\'\'":
                 self.mon_port = None
             else:
-                mon_port = serial.Serial()
+                mon_port = serial.Serial()                
                 self.mon_port = serial.Serial(
                     port=str(params["monPort"]),
                     baudrate=params["baud"],

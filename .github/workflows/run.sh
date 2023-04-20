@@ -1,21 +1,22 @@
 #!/bin/bash
-
-echo "#####################################################"
-echo "# The working folder is the root of this repo.      #"
-echo "# .github/workflows/run.sh 2nd_board_type MSKD      #"
-echo "#####################################################"
+echo
+echo "####################################################################"
+echo "# The working folder is the root of repo ble_auto_testing.         #"
+echo "# .github/workflows/run.sh 1_2nd_board_type 2_MSKD 3_TEST_TIME     #"
+echo "####################################################################"
 echo
 echo $0 $@
 echo
 
 VERBOSE=0
 
-if [ $# -ne 2 ]; then
+if [ $# -ne 3 ]; then
     echo "Invalid input arguments."
     echo
 fi
 
 ERR_INVALID_2ND_BRD_TYPE=1
+FAIL_TO_ACQUIRE_BOARDS=2
 
 SEC_BRD_TYPE=$1
 case $SEC_BRD_TYPE in
@@ -45,6 +46,8 @@ MSDK=$2
 echo "PWD: $PWD"
 echo
 
+TEST_TIME=$3
+
 if [ $VERBOSE -eq 1 ]; then
     ls -hal
 fi
@@ -52,10 +55,24 @@ fi
 set -e
 set -o pipefail
 
-#echo "Create the Python env."
-#python -m venv venv
-#source ./venv/bin/activate
-#python -m pip install -r requirements.txt
+mkdir -p /tmp/ci_test/timing
+LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
+
+#--------------------------------------------------------
+function cleanup {
+    set +x
+    printf "\n<<<<<<< cleanup before exit\n"
+    if [ -f $LOCK_FILE ]; then
+        set -x
+        bash $LOCK_FILE
+        set +x
+    fi
+    printf "\n<<<<<< EXIT <<<<<<\n\n"
+}
+#--------------------------------------------------------
+trap cleanup EXIT
+#--------------------------------------------------------
+
 source ~/anaconda3/etc/profile.d/conda.sh
 conda activate py3_10
 
@@ -95,48 +112,79 @@ sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE')
 jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['DAP_sn'])"`
 jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
 
-DevKitUart0Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['con_sn'])"`
-DevKitUart0Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['con_sn'])"`
-DevKitUart3Sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['hci_sn'])"`
-DevKitUart3Sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['hci_sn'])"`
+con_sn1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['con_sn'])"`
+con_sn2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['con_sn'])"`
+hci_sn1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['hci_sn'])"`
+hci_sn2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['hci_sn'])"`
+
+# get the lock file for each board
+BRD1_LOCK=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); print(obj['${BRD1}']['lockfile'])"`
+echo "   BRD1 lock file: $BRD1_LOCK"
+BRD2_LOCK=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); print(obj['${BRD2}']['lockfile'])"`
+echo "   BRD2 lock file: $BRD2_LOCK"
+echo 
 
 echo "        sniffer_sn: $sniffer_sn"
 echo
 echo "         jtag_sn_1: $jtag_sn_1"
-echo "   DevKitUart0Sn_1: $DevKitUart0Sn_1"
-echo "   DevKitUart0Sn_2: $DevKitUart0Sn_2"
+echo "           con_sn1: $con_sn1"
+echo "           con_sn2: $con_sn2"
 echo
 echo "         jtag_sn_2: $jtag_sn_2"
-echo "   DevKitUart3Sn_1: $DevKitUart3Sn_1"
-echo "   DevKitUart3Sn_2: $DevKitUart3Sn_2"
+echo "           hci_sn1: $hci_sn1"
+echo "           hci_sn2: $hci_sn2"
 echo
 echo
 
-export snifferSerial=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
+if [[ $BRD1 =~ "nRF" ]]; then
+    export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n ${sniffer_sn} | awk -F tty '{print $2}')"
+    export CON_PORT1=
+else
+    echo here
+    export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
+    export CON_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn1 | awk -F tty '{print $2}')"
+fi
+export HCI_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn1 | awk -F tty '{print $2}')"
 
-export devSerial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_1 | awk -F tty '{print $2}')"
-export devUart3Serial_1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_1 | awk -F tty '{print $2}')"
+export CON_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn2 | awk -F tty '{print $2}')"
+export HCI_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn2 | awk -F tty '{print $2}')"
 
-
-export devSerial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart0Sn_2 | awk -F tty '{print $2}')"
-export devUart3Serial_2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $DevKitUart3Sn_2 | awk -F tty '{print $2}')"
-
-echo "           sniffer: $snifferSerial"
+echo "           sniffer: $SNIFFER_USB"
 echo
 
-if [ "$BRD1" == *"nRF"* ]; then
-    unset devSerial_1
+echo "board 1 trace port: $CON_PORT1"
+echo "  board 1 HCI port: $HCI_PORT1"
+echo 
+echo "board 2 trace port: $CON_PORT2"
+echo "  board 2 HCI port: $HCI_PORT2"
+echo 
+
+printf "\nTry to lock the files...\n"    
+python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -l -t 3600 -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+if [ $? -ne 0 ]; then
+    printf "\nFail to acquire the resources.\n"
+    exit FAIL_TO_ACQUIRE_BOARDS
 fi
 
-echo "board 1 trace port: $devSerial_1"
-echo "  board 1 HCI port: $devUart3Serial_1"
-echo 
-echo "board 2 trace port: $devSerial_2"
-echo "  board 2 HCI port: $devUart3Serial_2"
-echo 
+touch $LOCK_FILE
+echo "python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}" >> $LOCK_FILE
+bash -x -c "cat $LOCK_FILE"
+echo
 
-if [ "$BRD1" != *"nRF"* ]; then
-    printf "<<<<<< build and flash ${BRD1}\n\n"
+SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
+if [[ $BRD1 =~ "nRF" ]]; then
+    printf "\n<<<reset nRF board\n\n"
+    set -x
+    nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset
+    set +x
+
+    echo $SH_RESET_BRD1
+    echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
+    echo "nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset" >> $SH_RESET_BRD1
+    chmod u+x $SH_RESET_BRD1
+    cat $SH_RESET_BRD1
+else
+    printf "\n<<<<<< build and flash ${BRD1}\n\n"
     echo
     set -x
     bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
@@ -149,15 +197,18 @@ if [ "$BRD1" != *"nRF"* ]; then
         True                        \
         True
     set +x
+    
+    echo $SH_RESET_BRD1
+    echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
+    echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD1_CHIP_UC} ${BRD1_TYPE} BLE5_ctr ${BRD1_DAP_SN} False True" >> $SH_RESET_BRD1
+    echo "sleep 10" >> $SH_RESET_BRD1
+    chmod u+x $SH_RESET_BRD1
+    cat $SH_RESET_BRD1
+
     echo
-else
-    echo "reset nRF board"
-    set -x
-    nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset
-    set +x
 fi
 
-printf "<<<<<< build and flash ${BRD2}\n\n"
+printf "\n<<<<<< build and flash ${BRD2}\n\n"
 echo
 set -x
 bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
@@ -167,9 +218,17 @@ bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_fla
     ${BRD2_TYPE}                \
     BLE5_ctr                    \
     ${BRD2_DAP_SN}              \
-    True                        \
-    True
+    False                        \
+    False
 set +x
+
+SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
+echo $SH_RESET_BRD2
+echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
+echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD2_CHIP_UC} ${BRD2_TYPE} BLE5_ctr ${BRD2_DAP_SN} False True" >> $SH_RESET_BRD2
+echo "sleep 10" >> $SH_RESET_BRD2
+chmod u+x $SH_RESET_BRD2
+cat $SH_RESET_BRD2
 echo
 
 TEMP1=`date +%M`
@@ -177,10 +236,17 @@ TEMP2=`date +%S`
 ADDR1=00:18:80:$TEMP1:$TEMP2:01
 ADDR2=00:18:80:$TEMP1:$TEMP2:02
 
-unbuffer python3 ble_test.py --interface ${snifferSerial}-None --device "" \
+unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
     --brd0-addr $ADDR1 --brd1-addr $ADDR2 \
-    --sp0 $devUart3Serial_1 --sp1 $devUart3Serial_2 \
-    --tp0 "$devSerial_1" --tp1 $devSerial_2 \
+    --sp0 $HCI_PORT1 --sp1 $HCI_PORT2 \
+    --tp0 "$CON_PORT1" --tp1 $CON_PORT2 \
     --time 35 --tshark /usr/bin/tshark
 
 yes | cp -p output/*.* /tmp/ci_test/timing/
+
+# release locked boards
+python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+
+echo "#------------------------------------------"
+echo "# DONE! "
+echo "#------------------------------------------"
