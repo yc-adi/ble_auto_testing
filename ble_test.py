@@ -57,7 +57,7 @@ import time
 import threading
 
 
-RETRY_LIMIT = 1
+RETRY_LIMIT = 3
 
 q = Queue()  # used to share data between threads
 

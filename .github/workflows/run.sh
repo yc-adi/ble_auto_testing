@@ -8,6 +8,8 @@ echo
 echo $0 $@
 echo
 
+VERBOSE=0
+
 if [ $# -ne 2 ]; then
     echo "Invalid input arguments."
     echo
@@ -43,7 +45,9 @@ MSDK=$2
 echo "PWD: $PWD"
 echo
 
-ls -hal
+if [ $VERBOSE -eq 1 ]; then
+    ls -hal
+fi
 
 set -e
 set -o pipefail
@@ -57,14 +61,17 @@ conda activate py3_10
 
 # Note: index of the two DevKit boards are 1-based.
 echo
-
 FILE=/home/$USER/Workspace/ci_config/boards_config.json
-#cat $FILE
+if [ $VERBOSE -eq 1 ]; then
+    cat $FILE
+fi
 echo
 
 # get the test boards
 TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/timing_tests.json
-#cat $TEST_CONFIG_FILE
+if [ $VERBOSE -eq 1 ]; then
+    cat $TEST_CONFIG_FILE
+fi
 echo
 
 HOST_NAME=`hostname`
