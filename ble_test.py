@@ -43,6 +43,7 @@ from ble_auto_testing import convert_pcap_to_pcapng, get_args
 import datetime
 import io
 from nrf_sniffer_ble import capture_write, run_sniffer as exe_sniffer
+import os
 from os.path import exists
 from SnifferAPI import Packet
 from SnifferAPI.Packet import all_tifs
@@ -51,6 +52,7 @@ from pprint import pprint
 from queue import Queue
 import shutil
 import statistics
+from subprocess import call, Popen, PIPE, CalledProcessError, STDOUT
 import sys
 from terminal import Terminal
 import time
@@ -158,9 +160,9 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     time.sleep(3)
 
     terminal_thd.input_cmd(0, "reset")
-    time.sleep(0.1)
+    time.sleep(0.5)
     terminal_thd.input_cmd(1, "reset")
-    time.sleep(0.1)
+    time.sleep(0.5)
 
     terminal_thd.input = "exit"
 
@@ -378,8 +380,6 @@ def full_test(args, parse_captured_file, new_phy):
 if __name__ == "__main__":
     parse_captured_file = False
     args = get_args()
-    print(f'\nargs:')
-    pprint(f'{vars(args)}\n')
 
     if parse_captured_file:
         new_phy_range = 3
@@ -396,6 +396,27 @@ if __name__ == "__main__":
             if res == 0:
                 break
             else:
+                # need to reset boards
+                file_name = os.path.realpath(args.reset1)
+                p = Popen(['bash', f'{file_name}'], 
+                            stdout=PIPE, stderr=PIPE, shell=True)
+
+                for line in iter(p.stdout.readline, b''):
+                    print(f'{line.strip().decode("utf-8")}')
+                
+                p.stdout.close()
+                p.wait()
+
+                file_name = os.path.realpath(args.reset2)
+                p = Popen(['bash', f'{file_name}'], 
+                            stdout=PIPE, stderr=PIPE, shell=True)
+
+                for line in iter(p.stdout.readline, b''):
+                    print(f'{line.strip().decode("utf-8")}')
+                
+                p.stdout.close()
+                p.wait()
+
                 tried += 1
 
             time.sleep(1)

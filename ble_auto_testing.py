@@ -283,8 +283,13 @@ def get_args():
     parser.add_argument('--time', help='test time in seconds', type=int, default=30)
     parser.add_argument('--tshark', help='tshark program to convert pcap to pcapng', default=
                         "/usr/bin/tshark")
+    parser.add_argument('--reset1', help='reset script for board 1', default="")
+    parser.add_argument('--reset2', help='reset script for board 2', default="")
+    
     args = parser.parse_args()
-    pprint(args)
+
+    print(f'\nargs:')
+    pprint(vars(args))
 
     return args
 

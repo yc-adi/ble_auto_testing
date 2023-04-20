@@ -184,7 +184,7 @@ if [[ $BRD1 =~ "nRF" ]]; then
     chmod u+x $SH_RESET_BRD1
     cat $SH_RESET_BRD1
 else
-    printf "\n<<<<<< build and flash ${BRD1}\n\n"
+    printf "\n<<<<<< build and flash board 1: ${BRD1}\n\n"
     echo
     set -x
     bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
@@ -208,7 +208,7 @@ else
     echo
 fi
 
-printf "\n<<<<<< build and flash ${BRD2}\n\n"
+printf "\n<<<<<< build and flash board 2: ${BRD2}\n\n"
 echo
 set -x
 bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
@@ -218,8 +218,8 @@ bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_fla
     ${BRD2_TYPE}                \
     BLE5_ctr                    \
     ${BRD2_DAP_SN}              \
-    False                        \
-    False
+    True                        \
+    True
 set +x
 
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
@@ -237,10 +237,13 @@ ADDR1=00:18:80:$TEMP1:$TEMP2:01
 ADDR2=00:18:80:$TEMP1:$TEMP2:02
 
 unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
-    --brd0-addr $ADDR1 --brd1-addr $ADDR2 \
-    --sp0 $HCI_PORT1 --sp1 $HCI_PORT2 \
-    --tp0 "$CON_PORT1" --tp1 $CON_PORT2 \
-    --time 35 --tshark /usr/bin/tshark
+    --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
+    --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
+    --tp0 "$CON_PORT1" --tp1 $CON_PORT2     \
+    --time 35 --tshark /usr/bin/tshark      \
+    --reset1 $SH_RESET_BRD1                 \
+    --reset2 $SH_RESET_BRD2
+    
 
 yes | cp -p output/*.* /tmp/ci_test/timing/
 
