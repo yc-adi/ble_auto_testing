@@ -105,7 +105,7 @@ do
     # check the configuration
     DO_THIS=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['${CHIP_BRD_TYPE}']['do_this'])"`
     printf "DO_THIS: ${DO_THIS}\n\n"
-
+    
     if [ ${DO_THIS} == "0" ]; then
         printf "Skip this ${CHIP_BRD_TYPE} board according to the configuration file.\n"
         continue
@@ -121,6 +121,7 @@ do
     printf "\nBRD1: $BRD1\n"
     printf "BRD2: $BRD2\n"
 
+
     BRD1_LOCK=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD1}']['lockfile'])"`
     BRD2_LOCK=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['lockfile'])"`
 
@@ -131,7 +132,6 @@ do
             printf "\nFail to acquire the resources.\n"
             continue
         fi
-
 
         LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
         touch $LOCK_FILE
@@ -213,7 +213,18 @@ do
     BRD2_CON=`python3 -c "import json; import os; obj=json.load(open('${BRD_CONFIG_FILE}')); print(obj['${BRD2}']['con_id'])"`
     printf "     BRD2_CON: $BRD2_CON\n"
 
-    if [ `hostname` == "yingcai-OptiPlex-790" ]; then
+    printf "\n<<< reset the sniffer\n\n"
+    SNIFFER_PROG_SN=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$BRD_CONFIG_FILE'))['${SNIFFER}']['prog_sn'])"`
+    set -x
+    if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_4" ]; then
+        nrfjprog --family nrf52 -s ${SNIFFER_PROG_SN} --debugreset
+    else
+        python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dongle --sn $SNIFFER_PROG_SN
+    fi
+    set +x
+    sleep 10
+    
+    if [ `hostname` == "yc-ubuntu" ]; then
         ADDR1=00:12:23:34:45:01
         ADDR2=00:12:23:34:45:02
     else

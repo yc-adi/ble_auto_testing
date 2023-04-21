@@ -195,7 +195,7 @@ class SnifferCollector(Notifications.Notifier):
                 pass
             else:
                 if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU:
-                    print(f'5.1 {packet.packetCounter}')
+                    print(f'5.1 {packet.packetCounter} {packet.id}')
                     self._processBLEPacket(packet)
                     # TRACE 125.1
                 elif packet.id == EVENT_FOLLOW:
@@ -222,7 +222,7 @@ class SnifferCollector(Notifications.Notifier):
                     else:
                         self._switchBaudRate(packet.baudRate)
                 elif packet.id == PING_RESP:
-                    print(f'5.5 {packet.packetCounter}')
+                    print(f'5.5 {packet.packetCounter} {packet.id}')
                     if hasattr(packet, 'version'):
                         versions = { 1116: '3.1.0',
                                      1115: '3.0.0',
