@@ -95,6 +95,12 @@ fi
 echo
 
 HOST_NAME=`hostname`
+# nRF52 Development Kit     (PCA10040)
+# nRF52840 Development Kit  (PCA10056)
+# nRF52840 Dongle           (PCA10059)
+# nRF51 Development Kit     (PCA10028)
+# nRF51 Dongle              (PCA10031)
+
 sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"`
 echo "     sniffer board: ${sniffer}"
 BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['$BRD_AND_TYPE']['board1'])"`
@@ -112,6 +118,7 @@ BRD2_TYPE=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); p
 BRD2_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); print(obj['${BRD2}']['DAP_sn'])"`
 
 sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
+SNIFFER_PROG_SN=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['prog_sn'])"`
 jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['DAP_sn'])"`
 jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
 
@@ -128,6 +135,7 @@ echo "   BRD2 lock file: $BRD2_LOCK"
 echo 
 
 echo "        sniffer_sn: $sniffer_sn"
+echo "   SNIFFER_PROG_SN: $SNIFFER_PROG_SN"
 echo
 echo "         jtag_sn_1: $jtag_sn_1"
 echo "           con_sn1: $con_sn1"
@@ -185,7 +193,7 @@ for ((phy=2;phy<=4;phy++)); do
     do
         printf "\n<<< reset the sniffer\n\n"
         set -x
-        nrfjprog --family nrf52 -s ${sniffer_sn} --debugreset
+        python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dk --sn $SNIFFER_PROG_SN
         set +x
 
         if [[ $BRD1 =~ "nRF" ]]; then
