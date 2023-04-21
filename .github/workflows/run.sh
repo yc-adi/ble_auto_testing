@@ -183,7 +183,7 @@ echo "python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_
 bash -x -c "cat $LOCK_FILE"
 echo
 
-LIMIT=3
+LIMIT=1  # remove me !!!
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 

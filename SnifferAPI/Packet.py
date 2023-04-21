@@ -277,6 +277,8 @@ class PacketReader(Notifications.Notifier):
             if packet.valid:
                 self.handlePacketCompatibility(packet)
                 self.handlePacketHistory(packet)
+            else:
+                print(f'<4.2')
             return packet
 
     def sendPacket(self, id, payload):
@@ -384,6 +386,7 @@ class Packet:
             self.protover = packetList[PROTOVER_POS]
 
             if self.protover > PROTOVER_V3:
+                print(f'<3')
                 logging.exception("Unsupported protocol version %s" % str(self.protover))
                 raise RuntimeError("Unsupported protocol version %s" % str(self.protover))
 
