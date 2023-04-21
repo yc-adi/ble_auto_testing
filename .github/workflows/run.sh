@@ -197,7 +197,7 @@ for ((phy=3;phy<=3;phy++)); do
         if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_4" ]; then
             nrfjprog --family nrf52 -s ${SNIFFER_PROG_SN} --debugreset
         else
-            python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dk --sn $SNIFFER_PROG_SN
+            python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dongle --sn $SNIFFER_PROG_SN
         fi
         set +x
 
@@ -272,8 +272,10 @@ for ((phy=3;phy<=3;phy++)); do
             --phy $phy
 
         if [[ $? == 0 ]]; then
-            printf "\nreturn: 0\n"
+            printf "\nreturned: 0\n"
             break
+        else
+            echo "returned: $?"
         fi
 
         tried=$((tried+1))

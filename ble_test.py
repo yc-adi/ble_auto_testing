@@ -142,7 +142,12 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     if new_phy < 2 or new_phy > 4:
         new_phy = 2
         print(f'{new_phy} is invalid new phy. Changed to 2 (2M).')
-    print(f'\nStart PHY timing test ({phy_cmd[new_phy - 1]}).')
+    print(f'\n<<<<<< Start PHY timing test ({phy_cmd[new_phy - 1]}).\n')
+
+    terminal_thd.input_cmd(0, "reset")
+    time.sleep(1)
+    terminal_thd.input_cmd(1, "reset")
+    time.sleep(1)
 
     terminal_thd.input_cmd(0, "addr " + addr1)
     time.sleep(0.1)
@@ -209,6 +214,9 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     params["extcap_control_out"] = "EXTCAP_CONTROL_OUT"
     params["timeout"] = timeout
     params["dev_addr"] = dev_adv_addr
+
+    print(f'\nwait 3 secs for the reset and set addresses for boards')
+    time.sleep(3)
 
     print(f"{str(datetime.datetime.now())} - Sniffer started.")
 
