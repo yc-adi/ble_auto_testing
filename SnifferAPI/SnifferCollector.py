@@ -195,6 +195,7 @@ class SnifferCollector(Notifications.Notifier):
                 pass
             else:
                 if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU:
+                    print(f'5.1 {packet.packetCounter}')
                     self._processBLEPacket(packet)
                     # TRACE 125.1
                 elif packet.id == EVENT_FOLLOW:
@@ -202,22 +203,26 @@ class SnifferCollector(Notifications.Notifier):
                     pass
                 elif packet.id == EVENT_CONNECT:
                     # TRACE 125.2
+                    print(f'5.2 {packet.packetCounter}')
                     self._connectEventPacketCounterValue = packet.packetCounter
                     self._inConnection = True
                     # copy it because packets are eventually deleted
                     self._currentConnectRequest = copy.copy(self._findPacketByPacketCounter(self._connectEventPacketCounterValue-1))
                 elif packet.id == EVENT_DISCONNECT:
                     # TRACE 125.3
+                    print(f'5.3 {packet.packetCounter}')
                     if self._inConnection:
                         self._packetsInLastConnection = packet.packetCounter - self._connectEventPacketCounterValue
                         self._inConnection = False
                 elif packet.id == SWITCH_BAUD_RATE_RESP and self._switchingBaudRate:
+                    print(f'5.4 {packet.packetCounter}')
                     self._switchingBaudRate = False
                     if packet.baudRate == self._proposedBaudRate:
                         self._packetReader.switchBaudRate(self._proposedBaudRate)
                     else:
                         self._switchBaudRate(packet.baudRate)
                 elif packet.id == PING_RESP:
+                    print(f'5.5 {packet.packetCounter}')
                     if hasattr(packet, 'version'):
                         versions = { 1116: '3.1.0',
                                      1115: '3.0.0',
@@ -230,9 +235,11 @@ class SnifferCollector(Notifications.Notifier):
                             self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
                         # logging.info("Firmware version %s" % self._fwversion)
                 elif packet.id == RESP_VERSION:
+                    print(f'5.6 {packet.packetCounter}')
                     self._fwversion = packet.version
                     # logging.info("Firmware version %s" % self._fwversion)
                 elif packet.id == RESP_TIMESTAMP:
+                    print(f'5.7 {packet.packetCounter}')
                     # Use current time as timestamp reference
                     self._last_time = time.time()
                     self._last_timestamp = packet.timestamp
@@ -242,6 +249,7 @@ class SnifferCollector(Notifications.Notifier):
                     logging.info(f'Firmware timestamp {self._last_timestamp} reference: '
                                  f'{time.strftime("%b %d %Y %X", lt)}.{usecs} {time.strftime("%Z", lt)}')
                 else:
+                    print(f'5.8 {packet.packetCounter}')
                     logging.info("Unknown packet ID")
 
     def _findPacketByPacketCounter(self, packetCounterValue):

@@ -133,7 +133,7 @@ capture_only_advertising = False
 capture_only_legacy_advertising = False
 capture_scan_response = True
 capture_scan_aux_pointer = True
-capture_coded = False
+capture_coded = True
 
 
 def extcap_config(interface):
@@ -694,8 +694,9 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         mst_hci.initFunc(
                             Namespace(interval="6", timeout="64", addr=target_given_addr, stats="False", maintain=False,
                                       listen="False"))
-                        sleep(0.5)
+                        sleep(1)
 
+                        """
                         print("\nSlave and master listenFunc")
                         slv_hci.listenFunc(Namespace(time=1, stats="False"))
                         mst_hci.listenFunc(Namespace(time=1, stats="False"))
@@ -706,13 +707,13 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
 
                         print("\nSlave listenFunc")
                         slv_hci.listenFunc(Namespace(time=1, stats="False"))
-
+                        """
                         # print(f'\nslave changes the PHY to {new_phy}')
                         # slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
                         print(f'\nmaster: change PHY to {new_phy}')
                         mst_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
                         mst_hci.listenFunc(Namespace(time=2, stats="False"))
-                        sleep_secs = 5
+                        sleep_secs = 3
                         print(f'sleep {sleep_secs}')
                         sleep(sleep_secs)
 
@@ -918,6 +919,15 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
         Returns:
             pcap file name
     """
+    global capture_coded
+    
+    print(f'\n<<<<<< nrf_sniffer_ble.py, run_sniffer()\n')
+    print(f'       capture_only_advertising: {capture_only_advertising}')
+    print(f'capture_only_legacy_advertising: {capture_only_legacy_advertising}')
+    print(f'          capture_scan_response: {capture_scan_response}')
+    print(f'       capture_scan_aux_pointer: {capture_scan_aux_pointer}')
+    print(f'                  capture_coded: {capture_coded}')
+
     interface = params["extcap_interface"]
     if inputs.mon1 == "''":
         inputs.mon1 = ""
@@ -954,7 +964,7 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
             name = name + "_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".pcap"
             base_dir = os.getcwd()
             given_name = os.path.join(base_dir, "output", name)
-            print(f'\ncaptured file saved to: {given_name}\n')
+            print(f'\ncaptured file will be saved to: {given_name}\n')
         else:
             given_name = None
 
