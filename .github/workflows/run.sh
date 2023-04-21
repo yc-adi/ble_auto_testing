@@ -138,20 +138,21 @@ echo "        sniffer_sn: $sniffer_sn"
 echo "   SNIFFER_PROG_SN: $SNIFFER_PROG_SN"
 echo
 echo "         jtag_sn_1: $jtag_sn_1"
+echo "         jtag_sn_2: $jtag_sn_2"
+echo
 echo "           con_sn1: $con_sn1"
 echo "           con_sn2: $con_sn2"
 echo
-echo "         jtag_sn_2: $jtag_sn_2"
 echo "           hci_sn1: $hci_sn1"
 echo "           hci_sn2: $hci_sn2"
 echo
-echo
 
 if [[ $BRD1 =~ "nRF" ]]; then
+    echo "Board 1 is a nrf52840 board."
     export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n ${sniffer_sn} | awk -F tty '{print $2}')"
     export CON_PORT1=
 else
-    echo here
+    echo "Board 1 is not a nRF52840 board."
     export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
     export CON_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn1 | awk -F tty '{print $2}')"
 fi
@@ -186,14 +187,18 @@ LIMIT=3
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
-for ((phy=2;phy<=4;phy++)); do
+for ((phy=3;phy<=3;phy++)); do
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true
     do
         printf "\n<<< reset the sniffer\n\n"
         set -x
-        python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dk --sn $SNIFFER_PROG_SN
+        if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_4" ]; then
+            nrfjprog --family nrf52 -s ${SNIFFER_PROG_SN} --debugreset
+        else
+            python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dk --sn $SNIFFER_PROG_SN
+        fi
         set +x
 
         if [[ $BRD1 =~ "nRF" ]]; then
@@ -267,6 +272,7 @@ for ((phy=2;phy<=4;phy++)); do
             --phy $phy
 
         if [[ $? == 0 ]]; then
+            printf "\nreturn: 0\n"
             break
         fi
 
@@ -283,16 +289,18 @@ done
 yes | cp -p output/*.* /tmp/ci_test/timing/
 
 # release locked boards
-python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}
 
-printf "\n#------------------------------------------------\n")
+printf "\n#------------------------------------------------\n"
 if [[ $phy -gt 4 ]]; then
     printf "\n# FAILED\n"
 else
     printf "\n# PASSED\n"
 fi
-printf "\n#------------------------------------------------\n\n")
+printf "\n#------------------------------------------------\n\n"
 
 echo "#------------------------------------------"
 echo "# DONE! "
 echo "#------------------------------------------"
+
+

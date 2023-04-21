@@ -147,13 +147,13 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(0, "addr " + addr1)
     time.sleep(0.1)
     terminal_thd.input_cmd(1, "addr " + addr2)
-    time.sleep(0.1)
+    time.sleep(3.0)
 
     terminal_thd.input_cmd(0, "adv -l 1")
     time.sleep(2)
 
     terminal_thd.input_cmd(1, "init -l 3 " + addr1)
-    time.sleep(3)
+    time.sleep(2)
 
     #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
     terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
@@ -295,7 +295,7 @@ def check_results(new_phy):
     # check T_IFS
     #
     if len(all_tifs) > 0:
-        first_readings = min(50, len(all_tifs))
+        first_readings = min(20, len(all_tifs))
         print(f'The first {first_readings} readings:\n{all_tifs[0:first_readings]}')
 
         max_tifs = max(all_tifs)
@@ -306,7 +306,8 @@ def check_results(new_phy):
               f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
         print(f'Address of all_tifs: {id(all_tifs)}')
 
-        print("\n\n-------------------------------------------------------------------")
+        print(f"\n\n-------------------------------------------------------------------")
+        print(f'PHY: {phy_cmd[new_phy - 1]}')
         if max_tifs <= 152 and min_tifs >= 148:
             print("                TIFS verification: PASS")
             res = 0
@@ -403,6 +404,7 @@ if __name__ == "__main__":
 
 
         if res > 0:
+            print(f'Error code: {res}')
             if len(failed_files) > 0:
                 # Save the failed files to /home/$USER/Workspace/ci_results
                 # Check if the folder exists

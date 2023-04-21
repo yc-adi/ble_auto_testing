@@ -911,7 +911,7 @@ def run_sniffer(params: dict):
             # base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             base_dir = os.getcwd()
             given_name = os.path.join(base_dir, "output", name)
-            print(f'\ncaptured file saved to: {given_name}\n')
+            print(f'\ncaptured file will be saved to: {given_name}\n')
         else:
             given_name = None
 
