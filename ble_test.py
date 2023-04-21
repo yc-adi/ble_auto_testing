@@ -371,8 +371,8 @@ def full_test(args, parse_captured_file, new_phy):
         print(f'captured_file: {captured_file}')
 
     if captured_file is not None:
-        if exists(captured_file):
-            parse_phy_timing_test_results(captured_file)
+        #remove me !!! if exists(captured_file):
+        #remove me !!!     parse_phy_timing_test_results(captured_file)
 
         #remove me !!! res = check_results(new_phy)
         res = 0

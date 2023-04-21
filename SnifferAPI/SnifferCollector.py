@@ -154,6 +154,7 @@ class SnifferCollector(Notifications.Notifier):
         self._nProcessedPackets += 1
         if packet.OK:
             try:
+                print(f'-- {packet.blePacket.type}')
                 if packet.blePacket.type == PACKET_TYPE_ADVERTISING:
 
                     if self.state == STATE_FOLLOWING and packet.blePacket.advType == 5:
@@ -177,6 +178,8 @@ class SnifferCollector(Notifications.Notifier):
                 self.notify("PACKET_PROCESSING_ERROR", {"errorString": str(e)})
 
     def _continuouslyPipe(self):
+        last_packet_id = 0
+
         while not self._exit:
             try:
                 packet = self._packetReader.getPacket(timeout=12)
@@ -196,8 +199,10 @@ class SnifferCollector(Notifications.Notifier):
                 pass
             else:
                 #print(f'<5 {packet.packetCounter}')
-                if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU:
-                    print(f'5.1 {packet.packetCounter}')
+                if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU or packet.id == PING_RESP:
+                    print(f'5.1 {packet.packetCounter} {packet.id}')
+                    if last_packet_id == 6 and packet.id == 14:
+                        print("here")
                     self._processBLEPacket(packet)
                     # TRACE 125.1
                 elif packet.id == EVENT_FOLLOW:
@@ -226,19 +231,21 @@ class SnifferCollector(Notifications.Notifier):
                     else:
                         print(f'5.4.2')
                         self._switchBaudRate(packet.baudRate)
-                elif packet.id == PING_RESP:
-                    print(f'5.5 {packet.packetCounter}')
-                    if hasattr(packet, 'version'):
-                        versions = { 1116: '3.1.0',
-                                     1115: '3.0.0',
-                                     1114: '2.0.0',
-                                     1113: '2.0.0-beta-3',
-                                     1112: '2.0.0-beta-1' }
-                        if packet.version is not None:
-                            self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
-                        else:
-                            self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
-                        # logging.info("Firmware version %s" % self._fwversion)
+                    """
+                    elif packet.id == PING_RESP:
+                        print(f'5.5 {packet.packetCounter} {packet.id}')
+                        if hasattr(packet, 'version'):
+                            versions = { 1116: '3.1.0',
+                                        1115: '3.0.0',
+                                        1114: '2.0.0',
+                                        1113: '2.0.0-beta-3',
+                                        1112: '2.0.0-beta-1' }
+                            if packet.version is not None:
+                                self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
+                            else:
+                                self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
+                            # logging.info("Firmware version %s" % self._fwversion)
+                    """
                 elif packet.id == RESP_VERSION:
                     print(f'5.6 {packet.packetCounter}')
                     self._fwversion = packet.version
@@ -256,6 +263,8 @@ class SnifferCollector(Notifications.Notifier):
                 else:
                     print(f'5.8')
                     logging.info("Unknown packet ID")
+
+                last_packet_id = packet.id
 
     def _findPacketByPacketCounter(self, packetCounterValue):
         with self._packetListLock:
