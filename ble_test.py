@@ -59,7 +59,7 @@ import time
 import threading
 
 
-RETRY_LIMIT = 3
+RETRY_LIMIT = 1
 
 q = Queue()  # used to share data between threads
 
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     else:
         new_phy_range = 5
 
-    for new_phy in range(2, new_phy_range):  # 2 (2M), 3 (S8), 4 (S2)
+    for new_phy in range(int(args.phy), int(args.phy) + 1):  # 2 (2M), 3 (S8), 4 (S2)
         tried = 0
         res = 0
         while tried < RETRY_LIMIT:
@@ -396,27 +396,6 @@ if __name__ == "__main__":
             if res == 0:
                 break
             else:
-                # need to reset boards
-                file_name = os.path.realpath(args.reset1)
-                p = Popen(['bash', f'{file_name}'], 
-                            stdout=PIPE, stderr=PIPE, shell=True)
-
-                for line in iter(p.stdout.readline, b''):
-                    print(f'{line.strip().decode("utf-8")}')
-                
-                p.stdout.close()
-                p.wait()
-
-                file_name = os.path.realpath(args.reset2)
-                p = Popen(['bash', f'{file_name}'], 
-                            stdout=PIPE, stderr=PIPE, shell=True)
-
-                for line in iter(p.stdout.readline, b''):
-                    print(f'{line.strip().decode("utf-8")}')
-                
-                p.stdout.close()
-                p.wait()
-
                 tried += 1
 
             time.sleep(1)

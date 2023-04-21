@@ -52,11 +52,13 @@ if [ $VERBOSE -eq 1 ]; then
     ls -hal
 fi
 
-set -e
-set -o pipefail
-
 mkdir -p /tmp/ci_test/timing
 LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
+
+rm $MSDK/ble_auto_testing/output/*
+
+#set -e
+#set -o pipefail
 
 #--------------------------------------------------------
 function cleanup {
@@ -71,6 +73,7 @@ function cleanup {
 }
 #--------------------------------------------------------
 trap cleanup EXIT
+trap cleanup INT
 #--------------------------------------------------------
 
 source ~/anaconda3/etc/profile.d/conda.sh
@@ -171,79 +174,98 @@ echo "python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_
 bash -x -c "cat $LOCK_FILE"
 echo
 
+LIMIT=3
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
-if [[ $BRD1 =~ "nRF" ]]; then
-    printf "\n<<<reset nRF board\n\n"
-    set -x
-    nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset
-    set +x
+SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
-    echo $SH_RESET_BRD1
-    echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
-    echo "nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset" >> $SH_RESET_BRD1
-    chmod u+x $SH_RESET_BRD1
-    cat $SH_RESET_BRD1
-else
-    printf "\n<<<<<< build and flash board 1: ${BRD1}\n\n"
-    echo
-    set -x
-    bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
-        ${MSDK}                     \
-        /home/$USER/Tools/openocd   \
-        ${BRD1_CHIP_UC}             \
-        ${BRD1_TYPE}                \
-        BLE5_ctr                    \
-        ${BRD1_DAP_SN}              \
-        True                        \
-        True
-    set +x
-    
-    echo $SH_RESET_BRD1
-    echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
-    echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD1_CHIP_UC} ${BRD1_TYPE} BLE5_ctr ${BRD1_DAP_SN} False True" >> $SH_RESET_BRD1
-    echo "sleep 10" >> $SH_RESET_BRD1
-    chmod u+x $SH_RESET_BRD1
-    cat $SH_RESET_BRD1
+for ((phy=2;phy<=4;phy++)); do
+    printf "\n<<<\n<<< phy: $phy\n>>>\n>>>\n"
+    tried=0
+    while true
+    do
+        if [[ $BRD1 =~ "nRF" ]]; then
+            printf "\n<<<<<< reset nRF board\n\n"
+            set -x
+            nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset
+            set +x
 
-    echo
-fi
+            echo $SH_RESET_BRD1
+            echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
+            echo "nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset" >> $SH_RESET_BRD1
+            chmod u+x $SH_RESET_BRD1
+            cat $SH_RESET_BRD1
+        else
+            printf "\n<<<<<< build and flash board 1: ${BRD1}\n\n"
+            echo
+            set -x
+            bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
+                ${MSDK}                     \
+                /home/$USER/Tools/openocd   \
+                ${BRD1_CHIP_UC}             \
+                ${BRD1_TYPE}                \
+                BLE5_ctr                    \
+                ${BRD1_DAP_SN}              \
+                True                        \
+                True
+            set +x
+            
+            echo $SH_RESET_BRD1
+            echo "#!/usr/bin/env bash" > $SH_RESET_BRD1
+            echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD1_CHIP_UC} ${BRD1_TYPE} BLE5_ctr ${BRD1_DAP_SN} False True" >> $SH_RESET_BRD1
+            echo "sleep 10" >> $SH_RESET_BRD1
+            chmod u+x $SH_RESET_BRD1
+            cat $SH_RESET_BRD1
 
-printf "\n<<<<<< build and flash board 2: ${BRD2}\n\n"
-echo
-set -x
-bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
-    ${MSDK}                     \
-    /home/$USER/Tools/openocd   \
-    ${BRD2_CHIP_UC}             \
-    ${BRD2_TYPE}                \
-    BLE5_ctr                    \
-    ${BRD2_DAP_SN}              \
-    True                        \
-    True
-set +x
+            echo
+        fi
 
-SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
-echo $SH_RESET_BRD2
-echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
-echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD2_CHIP_UC} ${BRD2_TYPE} BLE5_ctr ${BRD2_DAP_SN} False True" >> $SH_RESET_BRD2
-echo "sleep 10" >> $SH_RESET_BRD2
-chmod u+x $SH_RESET_BRD2
-cat $SH_RESET_BRD2
-echo
+        printf "\n<<<<<< build and flash board 2: ${BRD2}\n\n"
+        echo
+        set -x
+        bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
+            ${MSDK}                     \
+            /home/$USER/Tools/openocd   \
+            ${BRD2_CHIP_UC}             \
+            ${BRD2_TYPE}                \
+            BLE5_ctr                    \
+            ${BRD2_DAP_SN}              \
+            True                        \
+            True
+        set +x
 
-TEMP1=`date +%M`
-TEMP2=`date +%S`
-ADDR1=00:18:80:$TEMP1:$TEMP2:01
-ADDR2=00:18:80:$TEMP1:$TEMP2:02
+        echo $SH_RESET_BRD2
+        echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
+        echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD2_CHIP_UC} ${BRD2_TYPE} BLE5_ctr ${BRD2_DAP_SN} False True" >> $SH_RESET_BRD2
+        echo "sleep 10" >> $SH_RESET_BRD2
+        chmod u+x $SH_RESET_BRD2
+        cat $SH_RESET_BRD2
+        echo
 
-unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
-    --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
-    --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
-    --tp0 "$CON_PORT1" --tp1 $CON_PORT2     \
-    --time 35 --tshark /usr/bin/tshark      \
-    --reset1 $SH_RESET_BRD1                 \
-    --reset2 $SH_RESET_BRD2
-    
+        TEMP1=`date +%M`
+        TEMP2=`date +%S`
+        ADDR1=00:18:80:$TEMP1:$TEMP2:01
+        ADDR2=00:18:80:$TEMP1:$TEMP2:02
+
+        unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
+            --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
+            --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
+            --tp0 "$CON_PORT1" --tp1 $CON_PORT2     \
+            --time 35 --tshark /usr/bin/tshark      \
+            --phy $phy
+
+        if [[ $? == 0 ]]; then
+            break
+        fi
+
+        tried=$((tried+1))
+        printf "\n<<< tried: $tried\n\n"
+        if [[ $tried -ge $LIMIT ]]; then
+            printf "\n<<< FAILED! GIVE UP!\n\n"
+            phy=5
+            break
+        fi
+    done
+done
 
 yes | cp -p output/*.* /tmp/ci_test/timing/
 

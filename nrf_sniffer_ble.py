@@ -130,7 +130,7 @@ capture_only_advertising = False
 capture_only_legacy_advertising = False
 capture_scan_response = True
 capture_scan_aux_pointer = True
-capture_coded = False
+capture_coded = True
 
 
 def extcap_config(interface):
@@ -682,8 +682,8 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                     time.sleep(1)
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                     if target_dev_addr is not None:
-                        msg = f'{str(datetime.datetime.now())} - After tried {tried} times, ' \
-                              f'found the target device "{target_device}" address: {target_dev_addr}'
+                        msg = f'\nAfter tried {tried} times, ' \
+                              f'found the target device "{target_device}" address: {target_dev_addr}\n'
                         print(msg)
                         logging.info(msg)
                         break
