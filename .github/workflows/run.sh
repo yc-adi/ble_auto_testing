@@ -179,10 +179,15 @@ SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
 for ((phy=2;phy<=4;phy++)); do
-    printf "\n<<<\n<<< phy: $phy\n>>>\n>>>\n"
+    printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true
     do
+        printf "\n<<< reset the sniffer\n\n"
+        set -x
+        nrfjprog --family nrf52 -s ${sniffer_sn} --debugreset
+        set +x
+
         if [[ $BRD1 =~ "nRF" ]]; then
             printf "\n<<<<<< reset nRF board\n\n"
             set -x
@@ -261,7 +266,7 @@ for ((phy=2;phy<=4;phy++)); do
         printf "\n<<< tried: $tried\n\n"
         if [[ $tried -ge $LIMIT ]]; then
             printf "\n<<< FAILED! GIVE UP!\n\n"
-            phy=5
+            phy=55
             break
         fi
     done
@@ -271,6 +276,14 @@ yes | cp -p output/*.* /tmp/ci_test/timing/
 
 # release locked boards
 python3 ~/Workspace/Resource_Share/Resoure_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}
+
+printf "\n#------------------------------------------------\n")
+if [[ $phy -gt 4 ]]; then
+    printf "\n# FAILED\n"
+else
+    printf "\n# PASSED\n"
+fi
+printf "\n#------------------------------------------------\n\n")
 
 echo "#------------------------------------------"
 echo "# DONE! "

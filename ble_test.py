@@ -152,7 +152,7 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(0, "adv -l 1")
     time.sleep(2)
 
-    terminal_thd.input_cmd(1, "init -l 1 " + addr1)
+    terminal_thd.input_cmd(1, "init -l 3 " + addr1)
     time.sleep(3)
 
     #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
