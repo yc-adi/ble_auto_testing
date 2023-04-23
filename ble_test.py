@@ -144,28 +144,36 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
         print(f'{new_phy} is invalid new phy. Changed to 2 (2M).')
     print(f'\n<<<<<< Start PHY timing test ({phy_cmd[new_phy - 1]}).\n')
 
-    terminal_thd.input_cmd(0, "reset")
-    time.sleep(1)
-    terminal_thd.input_cmd(1, "reset")
-    time.sleep(1)
-
-    terminal_thd.input_cmd(0, "addr " + addr1)
-    time.sleep(0.1)
-    terminal_thd.input_cmd(1, "addr " + addr2)
-    time.sleep(3.0)
-
-    terminal_thd.input_cmd(0, "adv -l 1")
-    time.sleep(2)
-
-    terminal_thd.input_cmd(1, "init -l 3 " + addr1)
-    time.sleep(2)
-
-    #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
-    terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
-    time.sleep(3)
+    time.sleep(0.5)
 
     terminal_thd.input_cmd(0, "reset")
     time.sleep(0.5)
+    terminal_thd.input_cmd(1, "reset")
+    time.sleep(0.5)
+
+    terminal_thd.input_cmd(0, "addr " + addr1)
+    time.sleep(0.5)
+    terminal_thd.input_cmd(1, "addr " + addr2)
+    time.sleep(0.5)
+
+    print(f'\nmaster: start to advertise\n')
+    terminal_thd.input_cmd(0, "adv -l 1")
+    time.sleep(1)
+
+    print(f'\nslave: start to connect\n')
+    terminal_thd.input_cmd(1, "init -l 6 -s " + addr1)
+    time.sleep(1)
+
+    #print(f'\nmaster: change PHY to {new_phy}\n')
+    #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
+    #terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
+    #time.sleep(1)
+
+    print(f'\nmaster: reset\n')
+    terminal_thd.input_cmd(0, "reset")
+    time.sleep(0.5)
+
+    print(f'\nslave: reset\n')
     terminal_thd.input_cmd(1, "reset")
     time.sleep(0.5)
 
@@ -218,7 +226,7 @@ def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeou
     print(f'\nwait 3 secs for the reset and set addresses for boards')
     time.sleep(3)
 
-    print(f"{str(datetime.datetime.now())} - Sniffer started.")
+    print(f"\n{str(datetime.datetime.now())} - start sniffer.\n")
 
     captured_file = exe_sniffer(params)
 

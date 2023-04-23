@@ -190,10 +190,10 @@ class BleHciConsole:
                 msg = msg.replace("\r\n", "")
                 if msg != "":
                     if first:
-                        print(f'\n{str(datetime.datetime.now())} {self.id}T {msg}')
+                        print(f'\n{str(datetime.datetime.now())} {self.id}  {msg}')
                         first = False
                     else:
-                        print(f'{str(datetime.datetime.now())} {self.id}T {msg}')
+                        print(f'{str(datetime.datetime.now())} {self.id}  {msg}')
 
     def closeListenDiscon(self):
         # Close the listener thread if active

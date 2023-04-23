@@ -412,7 +412,9 @@ class Packet:
             self.valid = False
 
     def __repr__(self):
-        return "UART packet, type: "+str(self.id)+", PC: "+str(self.packetCounter)
+        msg = "\nUART packet, type: "+str(self.id)+", packetCounter: "+str(self.packetCounter)+"\n"
+        
+        return msg
 
     def readPayload(self, packetList, file_type):
         global test_log

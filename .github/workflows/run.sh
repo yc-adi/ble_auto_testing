@@ -187,7 +187,7 @@ LIMIT=1  # remove me !!!
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
-for ((phy=3;phy<=3;phy++)); do
+for ((phy=2;phy<=2;phy++)); do
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true

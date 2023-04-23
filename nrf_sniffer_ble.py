@@ -679,7 +679,6 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                 print(f'Try to find the target board0 with address: {target_given_addr}.')
                 tried = 0
                 while tried < 15:
-                    time.sleep(1)
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                     if target_dev_addr is not None:
                         msg = f'\nAfter tried {tried} times, ' \
@@ -689,6 +688,8 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         break
                     tried += 1
                     print(f'Tried {tried} times to find the target device "{target_device}".')
+
+                    time.sleep(0.2)
 
                 if tried >= 15:
                     msg = f'Failed to find the target device "{target_device}" with given address "{target_given_addr}"'
@@ -718,67 +719,18 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             else:
                 start_time = time.time()
                 msg = f'\nStart: {time.ctime(start_time)}\n'
-                logging.info(msg)
+                print(msg)
 
-                operation_timeout = False
-                last_packet_time_after_timeout = None
                 while True:
-                    # Wait for keyboardinterrupt
-                    if last_parsed_packet_time is not None:
-                        curr = time.time()
-                        delta_secs = curr - start_time
-                        if delta_secs > timeout and not operation_timeout:
-                            msg = f'Try to end by op time, start: {time.ctime(start_time)}, '\
-                                  f'totally {delta_secs:.0f} secs, {last_parsed_packet_time}.'
-                            logging.info(msg)
-                            print(f'{str(datetime.datetime.now())} - {msg}')
-
-                            operation_timeout = True
-                            last_packet_time_after_timeout = last_parsed_packet_time
-
-                            time.sleep(1)
-
-                            final_check = time.time()
-                            last_check_time = time.time()
-
-                        if operation_timeout:
-                            time.sleep(1)
-                            if last_packet_time_after_timeout == last_parsed_packet_time:
-                                msg = f'End by no more saved packets, {last_parsed_packet_time}, ' \
-                                      f'totally {delta_secs:.0f} secs.'
-                                logging.info(msg)
-                                print(f'{str(datetime.datetime.now())} - {msg}')
-
-                                if time.time() - final_check > 5.0:
-                                    break
-                            else:
-                                curr = time.time()
-                                if curr - last_check_time > 2.0:  # check every 1 sec
-                                    last_check_time = curr
-                                    print(f'{str(datetime.datetime.now())} - {last_parsed_packet_time}, '
-                                          f'{last_packet_time_after_timeout}, {time.ctime(last_parsed_packet_time)}')
-
-                            last_packet_time_after_timeout = last_parsed_packet_time
-
-                        if last_parsed_packet_time - start_time > timeout:
-                            msg = f'End by timeout, {time.ctime(last_parsed_packet_time)}, ' \
-                                  f'totally {last_parsed_packet_time - start_time:.0f} secs.'
-                            logging.info(msg)
-                            print(f'{str(datetime.datetime.now())} - {msg}')
-
-                            if final_check is None:
-                                final_check = time.time()
-                            elif time.time() - final_check > 5.0:
-                                break
-                            else:
-                                time.sleep(1)
-                    else:
-                        curr = time.time()
-                        delta_secs = curr - start_time
-                        if delta_secs > timeout:
-                            msg = f'End  : {time.ctime(curr)}, totally {delta_secs:.0f} secs.'
-                            logging.info(msg)
-                            break
+                    curr = time.time()
+                    delta_secs = curr - start_time
+                    if delta_secs > timeout:
+                        print(f'\nstart time: {time.ctime(start_time)}')
+                        print(f' curr time: {time.ctime(curr)}')
+                        print(f'delta secs: {delta_secs} > {timeout}\n')
+                        break
+                    
+                    time.sleep(1)
         else:
             logging.info("")
             # Start receiving packets
@@ -894,7 +846,7 @@ def run_sniffer(params: dict):
     print(f'       capture_scan_aux_pointer: {capture_scan_aux_pointer}')
     print(f'                  capture_coded: {capture_coded}')
 
-    capture_coded = False
+    capture_coded = True
 
     interface = params["extcap_interface"]
 

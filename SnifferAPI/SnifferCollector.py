@@ -37,12 +37,15 @@
 import datetime
 from . import Packet, Exceptions, CaptureFiles, Devices, Notifications
 import time, sys, threading, subprocess, os, logging, copy
+from pprint import pprint
 from serial import SerialException
 from .Types import *
 
 STATE_INITIALIZING = 0
 STATE_SCANNING = 1
 STATE_FOLLOWING = 2
+
+new_phy_packet = False
 
 class SnifferCollector(Notifications.Notifier):
     def __init__(self, portnum=None, baudrate=None, auto_test=False, given_name=None, *args, **kwargs):
@@ -124,6 +127,12 @@ class SnifferCollector(Notifications.Notifier):
         self._devices.appendOrUpdate(device)
 
     def _processBLEPacket(self, packet):
+        global new_phy_packet
+
+        if new_phy_packet:
+            pprint(packet)
+            new_phy_packet = False
+
         packet.boardId = self._boardId
 
         if packet.protover >= PROTOVER_V3:
@@ -154,7 +163,8 @@ class SnifferCollector(Notifications.Notifier):
         self._nProcessedPackets += 1
         if packet.OK:
             try:
-                print(f'-- {packet.blePacket.type}')
+                if new_phy_packet:
+                    print(f'-- {packet.blePacket.type}')
                 if packet.blePacket.type == PACKET_TYPE_ADVERTISING:
 
                     if self.state == STATE_FOLLOWING and packet.blePacket.advType == 5:
@@ -176,8 +186,14 @@ class SnifferCollector(Notifications.Notifier):
             except Exception as e:
                 logging.exception("packet processing error %s" % str(e))
                 self.notify("PACKET_PROCESSING_ERROR", {"errorString": str(e)})
+        else:
+            if new_phy_packet:
+                print(f'packet.OK: {packet.OK}')
+                new_phy_packet = False
 
     def _continuouslyPipe(self):
+        global new_phy_packet
+
         last_packet_id = 0
 
         while not self._exit:
@@ -200,9 +216,11 @@ class SnifferCollector(Notifications.Notifier):
             else:
                 #print(f'<5 {packet.packetCounter}')
                 if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU or packet.id == PING_RESP:
-                    print(f'5.1 {packet.packetCounter} {packet.id}')
+                    if last_packet_id == 2 and packet.id == 6:
+                        print(f'\n5.1 changed from ADV to DATA @ {packet.packetCounter}\n')
                     if last_packet_id == 6 and packet.id == 14:
-                        print("here")
+                        print(f"\n{str(datetime.datetime.now())} NEW PHY PACKET should be seen here @ {packet.packetCounter}\n")
+                        new_phy_packet = True
                     self._processBLEPacket(packet)
                     # TRACE 125.1
                 elif packet.id == EVENT_FOLLOW:
