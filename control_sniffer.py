@@ -37,21 +37,8 @@ def reset_board(sn):
             if line.find("Cortex-M0 identified") != -1:
                 break
 
-    #print("Send command to JLinkExe to reset the board")
-    jlink_process.stdin.write(b'r\n')  # Send 'r' command to reset target
-    #jlink_process.stdin.flush()
-    #output = jlink_process.stdout.readline().decode().strip()
-    #print(output)
-    
-    while False:
-        output = jlink_process.stdout.readline()
-        if output == '' and jlink_process.poll() is not None:
-            break
-        if output:
-            line = output.decode().strip()
-            print(line)
-            if line.find("Reset device via AIRCR.SYSRESETREQ") != -1:
-                break
+    print("Send 'r' command to reset target")
+    jlink_process.stdin.write(b'r\n')  
 
     time.sleep(1)
     

@@ -285,7 +285,9 @@ def new_packet(notification):
 
 
 def device_added(notification):
-    """A device is added or updated"""
+    """A device is added or updated
+        search "DEVICE_ADDED"
+    """
     device = notification.msg
 
     # Only add devices matching RSSI filter
@@ -298,6 +300,7 @@ def device_added(notification):
                    string_address(device.address))
 
         message = str(device.address) + '\0' + display
+        #print(f'added a new device: {message}')
 
         control_write(CTRL_ARG_DEVICE, CTRL_CMD_ADD, message)
 
@@ -327,10 +330,11 @@ def devices_cleared(notification):
 def handle_control_command(sniffer, arg, typ, payload, auto_test=False, device_address=None):
     """Handle command from control channel"""
     global last_used_key_type
-
+    print(f'handle_control_command()')
     if auto_test:
         # Instead of finding the device address, directly get from the user input
         device = Devices.Device(address=device_address, name='""', RSSI=0)
+        print(f'focus on device: {device}')
         follow_device(sniffer, device)
     else:
         if arg == CTRL_ARG_DEVICE:
@@ -364,6 +368,7 @@ def handle_control_command(sniffer, arg, typ, payload, auto_test=False, device_a
 
 def control_read_initial_values(sniffer, auto_test=False, device_address=None):
     """Read initial control values"""
+    print(f'control_read_initial_values(), auto_test: {auto_test}, dev addr: {device_address}')
     if auto_test:
         handle_control_command(sniffer, None, None, None, auto_test=auto_test, device_address=device_address)
     else:
@@ -408,12 +413,12 @@ def clear_devices(sniffer):
 def follow_device(sniffer, device):
     """Follow the selected device"""
     global in_follow_mode
-
+    print(f'follow_device()')
     sniffer.follow(device, capture_only_advertising, capture_only_legacy_advertising, capture_coded)
     time.sleep(.1)
 
     in_follow_mode = True
-    logging.info("Following " + string_address(device.address))
+    print("Following " + string_address(device.address))
 
 
 def set_key_value(sniffer, payload):
@@ -666,17 +671,17 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         sniffer.getFirmwareVersion()
         sniffer.getTimestamp()
 
+        print(f"\nstart sniffer, auto_test: {auto_test}")
         sniffer.start()
-        logging.info(f"sniffer started. auto_test: {auto_test}")
 
+        print("\nstart capturing adv")
         sniffer.scan(capture_scan_response, capture_scan_aux_pointer, capture_coded)
-        logging.info("scanning started")
 
         if fn_ctrl_in is not None and fn_ctrl_out is not None:
             # First read initial control values
             if auto_test:
                 # Get the target device address
-                print(f'Try to find the target board0 with address: {target_given_addr}.')
+                print(f'\nTry to find the target board0 with address: {target_given_addr}.')
                 tried = 0
                 while tried < 15:
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)

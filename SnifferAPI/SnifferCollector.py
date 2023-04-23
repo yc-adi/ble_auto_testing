@@ -279,8 +279,10 @@ class SnifferCollector(Notifications.Notifier):
                     logging.info(f'Firmware timestamp {self._last_timestamp} reference: '
                                  f'{time.strftime("%b %d %Y %X", lt)}.{usecs} {time.strftime("%Z", lt)}')
                 else:
-                    print(f'5.8')
-                    logging.info("Unknown packet ID")
+                    if packet.id == REQ_FOLLOW:
+                        print("\nREQ_FOLLOW\n")
+                    else:
+                        print(f'5.8 UNKNOWN packet.id')
 
                 last_packet_id = packet.id
 
@@ -311,9 +313,10 @@ class SnifferCollector(Notifications.Notifier):
         self.clearCallbacks()
         self._devices.clearCallbacks()
 
-    def _startFollowing(self, device, followOnlyAdvertisements = False, followOnlyLegacy = False, followCoded = False):
+    def _startFollowing(self, device, followOnlyAdvertisements=False, followOnlyLegacy=False, followCoded=False):
+        print(f'_startFollowing(), dev: {device}, OnlyAdv: {followOnlyAdvertisements}, OnlyLegacy: {followOnlyLegacy}, Coded: {followCoded}')
         self._devices.setFollowed(device)
-        logging.info("Sniffing device " + str(self._devices.index(device)) + ' - "' + device.name + '"')
+        print("Sniffing device " + str(self._devices.index(device)) + ' - "' + device.name + '"')
         self._packetReader.sendFollow(device.address, followOnlyAdvertisements, followOnlyLegacy, followCoded)
         self._setState(STATE_FOLLOWING)
 

@@ -46,6 +46,7 @@ PROTOVER_V2  = 2
 PROTOVER_V1  = 1
 
 # UART protocol packet codes (see sniffer_uart_protocol.pdf)
+# https://github.com/homewsn/bsniffhub
 REQ_FOLLOW                = 0x00
 EVENT_FOLLOW              = 0x01
 EVENT_PACKET_ADV_PDU      = 0x02
@@ -68,6 +69,31 @@ REQ_TIMESTAMP             = 0x1D
 RESP_TIMESTAMP            = 0x1E
 SET_IDENTITY_RESOLVING_KEY= 0x1F
 GO_IDLE                   = 0xFE
+
+uart_proto_id_str = {
+    0x00: "REQ_FOLLOW",
+    0x01: "EVENT_FOLLOW",
+    0x02: "EVENT_PACKET_ADV_PDU",
+    0x05: "EVENT_CONNECT",
+    0x06: "EVENT_PACKET_DATA_PDU",
+    0x07: "REQ_SCAN_CONT",
+    0x09: "EVENT_DISCONNECT",
+    0x0C: "SET_TEMPORARY_KEY",
+    0x0D: "PING_REQ",
+    0x0E: "PING_RESP",
+    0x13: "SWITCH_BAUD_RATE_REQ",
+    0x14: "SWITCH_BAUD_RATE_RESP",
+    0x17: "SET_ADV_CHANNEL_HOP_SEQ",
+    0x18: "SET_PRIVATE_KEY",
+    0x19: "SET_LEGACY_LONG_TERM_KEY",
+    0x1A: "SET_SC_LONG_TERM_KEY",
+    0x1B: "REQ_VERSION",
+    0x1C: "RESP_VERSION",
+    0x1D: "REQ_TIMESTAMP",
+    0x1E: "RESP_TIMESTAMP",
+    0x1F: "SET_IDENTITY_RESOLVING_KEY",
+    0xFE: "GO_IDLE"
+}
 
 PACKET_TYPE_UNKNOWN       = 0x00
 PACKET_TYPE_ADVERTISING   = 0x01

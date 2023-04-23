@@ -282,6 +282,7 @@ class PacketReader(Notifications.Notifier):
             return packet
 
     def sendPacket(self, id, payload):
+        print(f'sendPacket to sniffer: {uart_proto_id_str[id]}')
         packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + \
                      toLittleEndian(self.packetCounter, 2) + [id] + payload
         packetList = self.encodeToSLIP(packetList)
@@ -295,7 +296,7 @@ class PacketReader(Notifications.Notifier):
 
     def sendFollow(self, addr, followOnlyAdvertisements = False, followOnlyLegacy = False, followCoded = False):
         flags0 = followOnlyAdvertisements | (followOnlyLegacy << 1) | (followCoded << 2)
-        logging.info("Follow flags: %s" % bin(flags0))
+        print(f'addr: {addr} ' + "Follow flags: %s" % bin(flags0))
         if addr:
             self.sendPacket(REQ_FOLLOW, addr + [flags0])
 
@@ -413,6 +414,13 @@ class Packet:
 
     def __repr__(self):
         msg = "\nUART packet, type: "+str(self.id)+", packetCounter: "+str(self.packetCounter)+"\n"
+        if self.payload is not None:
+            msg += f"payload: {self.payload}\n"
+        
+        if self.blePacket is not None:
+            msg += f"blePacket: {self.blePacket}"
+        
+        msg += f"time from pcap: {time.ctime(self.packet_time_from_pcap)}\n"
         
         return msg
 
