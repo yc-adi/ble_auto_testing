@@ -47,7 +47,7 @@ CONFIG_FILE=~/Workspace/ci_config/timing_tests.json
 CI_TEST=ble_timing_verify.yml
 
 echo "cat ${CONFIG_FILE}"
-cat ${CONFIG_FILE}
+#cat ${CONFIG_FILE}
 echo
 
 HOST_NAME=`hostname`
@@ -181,12 +181,10 @@ do
         ${BRD2_TYPE}                \
         BLE5_ctr                    \
         ${BRD2_DAP_SN}              \
-        True                        \
+        False                        \
         True
     set +x
     echo
-
-    sleep 5
 
     printf "\n#----------------------------------------------------------------\n"
     printf "# run test"
@@ -216,21 +214,23 @@ do
     printf "\n<<< reset the sniffer\n\n"
     SNIFFER_PROG_SN=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$BRD_CONFIG_FILE'))['${SNIFFER}']['prog_sn'])"`
     set -x
-    if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_4" ]; then
+    if [ "$sniffer" == "nRF52840_2" ] || [ "$sniffer" == "nRF52840_4" ]; then
         nrfjprog --family nrf52 -s ${SNIFFER_PROG_SN} --debugreset
     else
         python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dongle --sn $SNIFFER_PROG_SN
+        echo
     fi
     set +x
-    sleep 10
+    printf "sleep 10 secs\n"
+    for((i=0;i<10;i++)); do
+        echo $((i))
+        sleep 1
+    done
     
-    if [ `hostname` == "yc-ubuntu" ]; then
-        ADDR1=00:12:23:34:45:01
-        ADDR2=00:12:23:34:45:02
-    else
-        ADDR1=00:11:22:33:44:21
-        ADDR2=00:11:22:33:44:22
-    fi
+    temp1=`date +%M`
+    temp2=`date +%S`
+    ADDR1=00:18:80:$temp1:$temp2:01
+    ADDR2=00:18:80:$temp1:$temp2:02
 
     set -x
 
@@ -239,7 +239,8 @@ do
         --addr1 $ADDR1 --addr2 $ADDR2                           \
         --hci1 $BRD1_HCI --hci2 $BRD2_HCI                       \
         --mon1 "$BRD1_CON" --mon2 "$BRD2_CON"                   \
-        --time 40 --tshark /usr/bin/tshark
+        --time 40 --tshark /usr/bin/tshark                      \
+        --new_phy 2
     
     if [ $? -eq 0 ]; then
         PASS=1

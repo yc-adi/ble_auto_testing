@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 
+"""
+Example
+    python3 control_sniffer.py --model x --sn 680435664
+"""
 import argparse
+import pexpect
 from pprint import pprint
 import subprocess
 import time
@@ -60,7 +65,21 @@ def reset_board(sn):
     jlink_process.wait()
 
 
+def board_reset(sn):
+    cmd = f'JLinkExe -USB {sn} -device NRF52840_XXAA -if SWD -speed 20000 -autoconnect 1'
+    print(f'run cmd: {cmd}')
+    child = pexpect.spawn(cmd)
+    child.expect("Cortex-M0 identified")
+    child.sendline('r')
+    child.expect("AIRCR.SYSRESETREQ")
+    child.sendline('exit')
+
+    #print(child.before.decode())
+    #child.interact()
+
+
 if __name__ == "__main__":
     inputs = get_inputs()
 
     reset_board(inputs.sn)
+    #board_reset(inputs.sn)

@@ -460,6 +460,13 @@ class BLE_hci:
     # Sends HCI commands to start advertising.
     ################################################################################
     def advFunc(self, args):
+        if isinstance(args.stats, str):
+            #print(f'args.stats type: {type(args.stats)}, value: {args.stats}')
+            if args.stats.lower() == "true":
+                args.stats = True
+            else:
+                args.stats = False
+                
         # Bogus address to use for commands, allows any peer to connect
         peer_addr = "000000000000"
 
@@ -576,6 +583,13 @@ class BLE_hci:
     # Sends HCI commands to start initiating and create a connection.
     ################################################################################
     def initFunc(self, args):
+        if isinstance(args.stats, str):
+            #print(f'args.stats type: {type(args.stats)}, value: {args.stats}')
+            if args.stats.lower() == "true":
+                args.stats = True
+            else:
+                args.stats = False
+
         # Reorder the address
         addrBytes = parseBdAddr(args.addr)
 

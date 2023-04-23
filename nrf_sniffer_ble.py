@@ -577,6 +577,7 @@ def control_loop(sniffer):
 
 def error_interface_not_found(interface, fifo):
     log = "nRF Sniffer for Bluetooth LE could not find interface: " + interface
+    print(f'{log}')
     control_write(CTRL_ARG_NONE, CTRL_CMD_ERROR_MSG, log)
     extcap_close_fifo(fifo)
     sys.exit(ERROR_INTERFACE)
@@ -648,7 +649,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         logging.info("Log started at %s", time.strftime("%c"))
 
         interface, extcap_version = interface.split('-')
-        logging.info("Extcap version %s", str(extcap_version))
+        print(f"Extcap version {str(extcap_version)}")
 
         capture_write(Pcap.get_global_header())
         validate_interface(interface, fifo)
@@ -663,26 +664,26 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         sniffer.subscribe("DEVICES_CLEARED", devices_cleared)
         sniffer.setAdvHopSequence([37, 38, 39])
         sniffer.setSupportedProtocolVersion(get_supported_protocol_version(extcap_version))
-        logging.info("Sniffer created")
+        print("Sniffer created")
 
-        logging.info("Software version: %s" % sniffer.swversion)
+        print("Software version: %s" % sniffer.swversion)
         sniffer.getFirmwareVersion()
         sniffer.getTimestamp()
 
         sniffer.start()
-        logging.info(f"sniffer started. auto_test: {auto_test}")
+        print(f"sniffer started. auto_test: {auto_test}")
 
         sniffer.scan(capture_scan_response, capture_scan_aux_pointer, capture_coded)
-        logging.info("scanning started")
+        print("scanning started")
 
         if fn_ctrl_in is not None and fn_ctrl_out is not None:
             # First read initial control values
             if auto_test:
                 # Get the target device address
-                print(f'Try to find the target board 2 with address: {target_given_addr}.')
+                print(f'Try to find the target board 1 with address: {target_given_addr}.')
                 tried = 0
-                while tried < 15:
-                    time.sleep(1)
+                FIND_DEVICE_LITMIT = 5
+                while tried < FIND_DEVICE_LITMIT:
                     target_dev_addr = sniffer.get_dev_addr(target_device, target_given_addr)
                     if target_dev_addr is not None:
                         msg = f'\nAfter tried {tried} times, ' \
@@ -690,11 +691,12 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         print(msg)
                         logging.info(msg)
 
-                        print(f"\nmaster: start to connect {target_given_addr}")
-                        mst_hci.initFunc(
-                            Namespace(interval="6", timeout="64", addr=target_given_addr, stats="False", maintain=False,
+                        print(f"\nslave: start to connect {target_given_addr}")
+                        slv_hci.initFunc(
+                            Namespace(interval="6", timeout="64", addr=target_given_addr, stats="True", maintain=False,
                                       listen="False"))
-                        sleep(1)
+                        
+                        sleep(3)
 
                         """
                         print("\nSlave and master listenFunc")
@@ -712,7 +714,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         # slv_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
                         print(f'\nmaster: change PHY to {new_phy}')
                         mst_hci.phyFunc(Namespace(phy=str(new_phy), timeout=1))
-                        mst_hci.listenFunc(Namespace(time=2, stats="False"))
+                        #mst_hci.listenFunc(Namespace(time=2, stats="False"))
                         sleep_secs = 3
                         print(f'sleep {sleep_secs}')
                         sleep(sleep_secs)
@@ -720,8 +722,10 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
                         break
                     tried += 1
                     print(f'Tried {tried} times to find the target device "{target_device}".')
+                    
+                    time.sleep(0.1)
 
-                if tried >= 15:
+                if tried >= FIND_DEVICE_LITMIT:
                     msg = f'Failed to find the target device "{target_device}" with given address "{target_given_addr}"'
                     print(msg)
                     logging.info(msg)
@@ -921,6 +925,12 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
     """
     global capture_coded
     
+    print("\nnrf_sniffer_ble.py, run_sniffer_with_hci(), inputs:")
+    pprint(inputs)
+
+    print("\nparams:")
+    pprint(params)
+
     print(f'\n<<<<<< nrf_sniffer_ble.py, run_sniffer()\n')
     print(f'       capture_only_advertising: {capture_only_advertising}')
     print(f'capture_only_legacy_advertising: {capture_only_legacy_advertising}')
@@ -932,8 +942,8 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
     if inputs.mon1 == "''":
         inputs.mon1 = ""
 
-    slv_hci = BLE_hci({"serialPort": inputs.hci2, "monPort": inputs.mon2, "baud": 115200, "id": 2})
     mst_hci = BLE_hci({"serialPort": inputs.hci1, "monPort": inputs.mon1, "baud": 115200, "id": 1})
+    slv_hci = BLE_hci({"serialPort": inputs.hci2, "monPort": inputs.mon2, "baud": 115200, "id": 2})
 
     print("\nslave: reset")
     slv_hci.resetFunc(None)
@@ -944,17 +954,16 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
 
     print(f"\nslave: set address {inputs.addr2}")
     slv_hci.addrFunc(Namespace(addr=inputs.addr2))
-    sleep(0.2)
+    sleep(0.5)
     print(f"\nmaster: set address {inputs.addr1}")
     mst_hci.addrFunc(Namespace(addr=inputs.addr1))
-    sleep(0.2)
+    sleep(0.5)
 
-    print("\nslave: starts adv")
-    slv_hci.advFunc(Namespace(interval="60", stats="False", connect="True", maintain=False, listen="False"))
-    sleep(1.0)
+    print("\nmaster: starts adv")
+    mst_hci.advFunc(Namespace(interval="60", stats="True", connect="True", maintain=False, listen="False"))
+    sleep(0.5)
 
     try:
-        logging.info(f'sniffer capture: {params}')
         if params["auto_test"]:
             if interface[0] == '/':
                 name = interface[1:].replace("/", "-")
@@ -971,7 +980,7 @@ def run_sniffer_with_hci(inputs: Namespace, params: dict):
         sniffer_capture(interface, params["baudrate"], params["fifo"], params["extcap_control_in"],
                         params["extcap_control_out"], auto_test=params["auto_test"],
                         timeout=params["timeout"], given_name=given_name,
-                        target_device=params["device"], target_given_addr=params["dev_addr"],
+                        target_device=params["device"], target_given_addr=inputs.addr1,
                         mst_hci=mst_hci, slv_hci=slv_hci, new_phy=inputs.new_phy)
     except KeyboardInterrupt:
         pass

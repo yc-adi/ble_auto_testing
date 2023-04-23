@@ -63,6 +63,8 @@ def get_args():
     parser.add_argument('--time', help='test time in seconds', type=int, default=30)
     parser.add_argument('--tshark', help='tshark program to convert pcap to pcapng', default=
                         "/usr/bin/tshark")
+    parser.add_argument("--new_phy", help="new PHY (2, 3, 4)", default="2")
+
     args = parser.parse_args()
     
     print(f'\ninput args:')
@@ -127,7 +129,7 @@ def run_hci_and_sniffer(inputs: Namespace):
 
     params = dict()
     params["capture"] = True
-    params["coded"] = False
+    params["coded"] = True
     params["extcap_interfaces"] = False
     params["extcap_interface"] = inputs.interface
     params["auto_test"] = True
@@ -137,9 +139,9 @@ def run_hci_and_sniffer(inputs: Namespace):
     params["extcap_control_in"] = "EXTCAP_CONTROL_IN"
     params["extcap_control_out"] = "EXTCAP_CONTROL_OUT"
     params["timeout"] = inputs.time
-    params["dev_addr"] = inputs.addr2
+    params["dev_addr"] = inputs.addr1
 
-    print(f'\nparams:')
+    print(f'\ntiming_test.py, run_hci_and_sniffer(), params:')
     pprint(params)
 
     sniffer_res['pcap_file_name'] = run_sniffer_with_hci(inputs, params)
@@ -147,33 +149,6 @@ def run_hci_and_sniffer(inputs: Namespace):
     print(f'sniffer_res:')
     pprint(sniffer_res)
     print(f'\n--- sniffer: Done!\n')
-
-
-def run_test(inputs, new_phy):
-
-    
-
-
-
-    print(f'\nmaster changes the PHY to 1')
-    mst_hci.phyFunc(Namespace(phy=str(1), timeout=1))
-    sleep(5)
-
-    print("\nmaster reset")
-    mst_hci.resetFunc(None)
-    sleep(0.5)
-    print("\nslave reset")
-    slv_hci.resetFunc(None)
-    sleep(3)
-
-    #print("\nmaster exit")
-    #mst_hci.exitFunc(None)
-    #sleep(1)
-    #print("\nslave exit")
-    #slv_hci.exitFunc(None)
-    #sleep(1)
-
-    print(f"\nfinish test on phy {new_phy}\n")
 
 
 def parse_phy_timing_test_results(captured_file: str):
@@ -274,12 +249,11 @@ def convert_pcap_to_pcapng(pcap_file: str, pcapng_file: str, tshark: str):
         p.stdout.close()
 
 
-def run_test_on_phy(inputs, phy):
+def run_test_on_phy(inputs):
     """this function will control the two DUT boards to start the BLE DTM test and start the sniffer
         to capture the packets.
     """
     # the captured file info will be saved in sniffer_res['pcap_file_name']
-    inputs.new_phy = phy
     run_hci_and_sniffer(inputs)
 
     pcap_file = sniffer_res['pcap_file_name']
@@ -300,23 +274,22 @@ def run_test_on_phy(inputs, phy):
 if __name__ == "__main__":
     inputs = get_args()
 
-    for phy in range(2, 4):  # 2 (2M), 3 (S8), 4 (S2)
-        tried = 0
-        res = 0
-        while tried < RETRY_LIMIT:
-            res = run_test_on_phy(inputs, phy)
+    tried = 0
+    res = 0
+    while tried < RETRY_LIMIT:
+        res = run_test_on_phy(inputs)
 
-            if res == 0:
-                break
-            else:
-                print(f'Return: {res}')
-                tried += 1
+        if res == 0:
+            break
+        else:
+            print(f'Return: {res}')
+            tried += 1
 
-            sleep(1)
-            print(f'======\nFAILED {tried} times.\n======')
+        sleep(1)
+        print(f'======\nFAILED {tried} times.\n======')
 
-        if res > 0:
-            exit(res)
+    if res > 0:
+        exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")
     exit(0)
