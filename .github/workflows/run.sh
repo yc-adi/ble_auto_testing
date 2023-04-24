@@ -187,7 +187,9 @@ LIMIT=1  # remove me !!!
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
-for ((phy=2;phy<=2;phy++)); do
+# not support coded
+# https://devzone.nordicsemi.com/f/nordic-q-a/54401/sniffing-ble-5-0-le-coded-phy-packets-using-nrf52840
+for ((phy=3;phy<=3;phy++)); do
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true
@@ -202,7 +204,7 @@ for ((phy=2;phy<=2;phy++)); do
         set +x
 
         if [[ $BRD1 =~ "nRF" ]]; then
-            printf "\n<<<<<< reset nRF board\n\n"
+            printf "\n<<<<<< reset board 1: nRF board\n\n"
             set -x
             nrfjprog --family nrf52 -s ${BRD1_DAP_SN} --debugreset
             set +x
@@ -264,14 +266,14 @@ for ((phy=2;phy<=2;phy++)); do
         ADDR1=00:18:80:$TEMP1:$TEMP2:01
         ADDR2=00:18:80:$TEMP1:$TEMP2:02
 
-        set -x
+        #set -x
         unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
             --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
             --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
             --tp0 "$CON_PORT1" --tp1 $CON_PORT2     \
             --time 35 --tshark /usr/bin/tshark      \
             --phy $phy
-        set +x
+        #set +x
         if [[ $? == 0 ]]; then
             printf "\nreturned: 0\n"
             break

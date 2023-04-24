@@ -282,7 +282,7 @@ class PacketReader(Notifications.Notifier):
             return packet
 
     def sendPacket(self, id, payload):
-        print(f'sendPacket to sniffer: {uart_proto_id_str[id]}')
+        print(f'\n<<< sendPacket to sniffer: {uart_proto_id_str[id]}\n')
         packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + \
                      toLittleEndian(self.packetCounter, 2) + [id] + payload
         packetList = self.encodeToSLIP(packetList)

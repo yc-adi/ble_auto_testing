@@ -164,10 +164,10 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(1, "init -l 6 -s " + addr1)
     time.sleep(1)
 
-    #print(f'\nmaster: change PHY to {new_phy}\n')
-    #terminal_thd.input_cmd(0, "phy 2")  # the PHY switching time is about 59.7 ms.
+    print(f'\nmaster: change PHY to {new_phy}\n')
+    terminal_thd.input_cmd(0, "phy " + str(new_phy))  # the PHY switching time is about 59.7 ms.
     #terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
-    #time.sleep(1)
+    time.sleep(1)
 
     print(f'\nmaster: reset\n')
     terminal_thd.input_cmd(0, "reset")
@@ -379,11 +379,10 @@ def full_test(args, parse_captured_file, new_phy):
         print(f'captured_file: {captured_file}')
 
     if captured_file is not None:
-        #remove me !!! if exists(captured_file):
-        #remove me !!!     parse_phy_timing_test_results(captured_file)
+        if exists(captured_file):
+            parse_phy_timing_test_results(captured_file)
 
-        #remove me !!! res = check_results(new_phy)
-        res = 0
+        res = check_results(new_phy)
     else:
         res = 2
 

@@ -215,7 +215,8 @@ class SnifferCollector(Notifications.Notifier):
                 pass
             else:
                 #print(f'<5 {packet.packetCounter}')
-                if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU or packet.id == PING_RESP:
+                #if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU or packet.id == PING_RESP:
+                if packet.id == EVENT_PACKET_DATA_PDU or packet.id == EVENT_PACKET_ADV_PDU:
                     if last_packet_id == 2 and packet.id == 6:
                         print(f'\n5.1 changed from ADV to DATA @ {packet.packetCounter}\n')
                     if last_packet_id == 6 and packet.id == 14:
@@ -249,25 +250,25 @@ class SnifferCollector(Notifications.Notifier):
                     else:
                         print(f'5.4.2')
                         self._switchBaudRate(packet.baudRate)
-                    """
-                    elif packet.id == PING_RESP:
-                        print(f'5.5 {packet.packetCounter} {packet.id}')
-                        if hasattr(packet, 'version'):
-                            versions = { 1116: '3.1.0',
-                                        1115: '3.0.0',
-                                        1114: '2.0.0',
-                                        1113: '2.0.0-beta-3',
-                                        1112: '2.0.0-beta-1' }
-                            if packet.version is not None:
-                                self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
-                            else:
-                                self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
-                            # logging.info("Firmware version %s" % self._fwversion)
-                    """
+                
+                elif packet.id == PING_RESP:
+                    print(f'\n5.5 {packet.packetCounter} {packet.id}\n')
+                    if hasattr(packet, 'version'):
+                        versions = { 1116: '3.1.0',
+                                    1115: '3.0.0',
+                                    1114: '2.0.0',
+                                    1113: '2.0.0-beta-3',
+                                    1112: '2.0.0-beta-1' }
+                        if packet.version is not None:
+                            self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
+                        else:
+                            self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
+                        print("Firmware version %s" % self._fwversion)
+                
                 elif packet.id == RESP_VERSION:
                     print(f'5.6 {packet.packetCounter}')
                     self._fwversion = packet.version
-                    # logging.info("Firmware version %s" % self._fwversion)
+                    print("Firmware version %s" % self._fwversion)
                 elif packet.id == RESP_TIMESTAMP:
                     # Use current time as timestamp reference
                     print(f'5.7 {packet.packetCounter}')
@@ -276,7 +277,7 @@ class SnifferCollector(Notifications.Notifier):
 
                     lt = time.localtime(self._last_time)
                     usecs = int((self._last_time - int(self._last_time)) * 1_000_000)
-                    logging.info(f'Firmware timestamp {self._last_timestamp} reference: '
+                    print(f'Firmware timestamp {self._last_timestamp} reference: '
                                  f'{time.strftime("%b %d %Y %X", lt)}.{usecs} {time.strftime("%Z", lt)}')
                 else:
                     if packet.id == REQ_FOLLOW:

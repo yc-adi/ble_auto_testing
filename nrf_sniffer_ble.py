@@ -667,7 +667,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
         sniffer.setSupportedProtocolVersion(get_supported_protocol_version(extcap_version))
         logging.info("Sniffer created")
 
-        logging.info("Software version: %s" % sniffer.swversion)
+        print("Software version: %s" % sniffer.swversion)
         sniffer.getFirmwareVersion()
         sniffer.getTimestamp()
 
