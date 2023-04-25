@@ -252,7 +252,7 @@ class SnifferCollector(Notifications.Notifier):
                         self._switchBaudRate(packet.baudRate)
                 
                 elif packet.id == PING_RESP:
-                    print(f'\n5.5 {packet.packetCounter} {packet.id}\n')
+                    #print(f'\n5.5 {packet.packetCounter} {packet.id}\n')
                     if hasattr(packet, 'version'):
                         versions = { 1116: '3.1.0',
                                     1115: '3.0.0',
@@ -263,7 +263,7 @@ class SnifferCollector(Notifications.Notifier):
                             self._fwversion = versions.get(packet.version, 'SVN rev: %d' % packet.version)
                         else:
                             self._fwversion = versions.get(packet.version, 'SVN rev: %d' % 1112)  # choose the oldest
-                        print("Firmware version %s" % self._fwversion)
+                        #print("Firmware version %s" % self._fwversion)
                 
                 elif packet.id == RESP_VERSION:
                     print(f'5.6 {packet.packetCounter}')

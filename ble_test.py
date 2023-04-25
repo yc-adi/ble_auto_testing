@@ -157,15 +157,15 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     time.sleep(0.5)
 
     print(f'\nmaster: start to advertise\n')
-    terminal_thd.input_cmd(0, "adv -l 1")
+    terminal_thd.input_cmd(0, "adv -l 5")
     time.sleep(1)
 
     print(f'\nslave: start to connect\n')
     terminal_thd.input_cmd(1, "init -l 6 -s " + addr1)
     time.sleep(1)
 
-    print(f'\nmaster: change PHY to {new_phy}\n')
-    terminal_thd.input_cmd(0, "phy " + str(new_phy))  # the PHY switching time is about 59.7 ms.
+    #remove me !!! print(f'\nmaster: change PHY to {new_phy}\n')
+    #terminal_thd.input_cmd(0, "phy " + str(new_phy))  # the PHY switching time is about 59.7 ms.
     #terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
     time.sleep(1)
 

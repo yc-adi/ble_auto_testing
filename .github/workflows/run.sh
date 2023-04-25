@@ -55,7 +55,7 @@ fi
 mkdir -p /tmp/ci_test/timing
 LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 
-rm $MSDK/ble_auto_testing/output/*
+#remove me !!! rm $MSDK/ble_auto_testing/output/*
 
 #set -e
 #set -o pipefail
@@ -103,6 +103,14 @@ HOST_NAME=`hostname`
 
 sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"`
 echo "     sniffer board: ${sniffer}"
+sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
+echo "        sniffer_sn: ${sniffer_sn}"
+SNIFFER_PROG_SN=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['prog_sn'])"`
+echo "   SNIFFER_PROG_SN: ${SNIFFER_PROG_SN}"
+SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n ${sniffer_sn} | awk -F tty '{print $2}')"
+echo "       SNIFFER_USB: ${SNIFFER_USB}"
+echo
+
 BRD1=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['$BRD_AND_TYPE']['board1'])"`
 echo "              BRD1: ${BRD1}"
 BRD2=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['$BRD_AND_TYPE']['board2'])"`
@@ -117,8 +125,7 @@ BRD2_CHIP_UC=`python3 -c "import json; import os; obj=json.load(open('${FILE}'))
 BRD2_TYPE=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); print(obj['${BRD2}']['type'])"`
 BRD2_DAP_SN=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); print(obj['${BRD2}']['DAP_sn'])"`
 
-sniffer_sn=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['sn'])"`
-SNIFFER_PROG_SN=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${sniffer}']['prog_sn'])"`
+
 jtag_sn_1=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD1}']['DAP_sn'])"`
 jtag_sn_2=`/usr/bin/python3 -c "import sys, json; print(json.load(open('$FILE'))['${BRD2}']['DAP_sn'])"`
 
@@ -134,9 +141,6 @@ BRD2_LOCK=`python3 -c "import json; import os; obj=json.load(open('${FILE}')); p
 echo "   BRD2 lock file: $BRD2_LOCK"
 echo 
 
-echo "        sniffer_sn: $sniffer_sn"
-echo "   SNIFFER_PROG_SN: $SNIFFER_PROG_SN"
-echo
 echo "         jtag_sn_1: $jtag_sn_1"
 echo "         jtag_sn_2: $jtag_sn_2"
 echo
@@ -149,20 +153,21 @@ echo
 
 if [[ $BRD1 =~ "nRF" ]]; then
     echo "Board 1 is a nrf52840 board."
-    export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n ${sniffer_sn} | awk -F tty '{print $2}')"
-    export CON_PORT1=
+    CON_PORT1=
 else
     echo "Board 1 is not a nRF52840 board."
-    export SNIFFER_USB=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $sniffer_sn | awk -F tty '{print $2}')"
-    export CON_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn1 | awk -F tty '{print $2}')"
+    CON_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn1 | awk -F tty '{print $2}')"
 fi
-export HCI_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn1 | awk -F tty '{print $2}')"
+HCI_PORT1=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn1 | awk -F tty '{print $2}')"
 
-export CON_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn2 | awk -F tty '{print $2}')"
-export HCI_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn2 | awk -F tty '{print $2}')"
-
-echo "           sniffer: $SNIFFER_USB"
-echo
+if [[ $BRD2 =~ "nRF" ]]; then
+    echo "Board 2 is a nrf52840 board."
+    export CON_PORT2=
+else
+    echo "Board 2 is not a nRF52840 board."
+    export CON_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $con_sn2 | awk -F tty '{print $2}')"
+fi
+HCI_PORT2=/dev/tty"$(ls -la /dev/serial/by-id | grep -n $hci_sn2 | awk -F tty '{print $2}')"
 
 echo "board 1 trace port: $CON_PORT1"
 echo "  board 1 HCI port: $HCI_PORT1"
@@ -189,14 +194,14 @@ SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
 # not support coded
 # https://devzone.nordicsemi.com/f/nordic-q-a/54401/sniffing-ble-5-0-le-coded-phy-packets-using-nrf52840
-for ((phy=3;phy<=3;phy++)); do
+for ((phy=2;phy<=2;phy++)); do
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true
     do
         printf "\n<<< reset the sniffer\n\n"
         set -x
-        if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_4" ]; then
+        if [ $sniffer == "nRF52840_2" ] || [ $sniffer == "nRF52840_3" ] || [ $sniffer == "nRF52840_4" ]; then
             nrfjprog --family nrf52 -s ${SNIFFER_PROG_SN} --debugreset
         else
             python3 $MSDK/ble_auto_testing/control_sniffer.py --model nrf52840_dongle --sn $SNIFFER_PROG_SN
@@ -239,28 +244,41 @@ for ((phy=3;phy<=3;phy++)); do
             echo
         fi
 
-        printf "\n<<<<<< build and flash board 2: ${BRD2}\n\n"
-        echo
-        set -x
-        bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
-            ${MSDK}                     \
-            /home/$USER/Tools/openocd   \
-            ${BRD2_CHIP_UC}             \
-            ${BRD2_TYPE}                \
-            BLE5_ctr                    \
-            ${BRD2_DAP_SN}              \
-            False                        \
-            True
-        set +x
+        if [[ $BRD2 =~ "nRF" ]]; then
+            printf "\n<<<<<< reset board 2: nRF board\n\n"
+            set -x
+            nrfjprog --family nrf52 -s ${BRD2_DAP_SN} --debugreset
+            set +x
 
-        echo $SH_RESET_BRD2
-        echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
-        echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD2_CHIP_UC} ${BRD2_TYPE} BLE5_ctr ${BRD2_DAP_SN} False True" >> $SH_RESET_BRD2
-        echo "sleep 10" >> $SH_RESET_BRD2
-        chmod u+x $SH_RESET_BRD2
-        cat $SH_RESET_BRD2
-        echo
+            echo $SH_RESET_BRD2
+            echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
+            echo "nrfjprog --family nrf52 -s ${BRD2_DAP_SN} --debugreset" >> $SH_RESET_BRD2
+            chmod u+x $SH_RESET_BRD2
+            cat $SH_RESET_BRD2
+        else
+            printf "\n<<<<<< build and flash board 2: ${BRD2}\n\n"
+            echo
+            set -x
+            bash -e $MSDK/Libraries/RF-PHY-closed/.github/workflows/scripts/RF-PHY_build_flash.sh \
+                ${MSDK}                     \
+                /home/$USER/Tools/openocd   \
+                ${BRD2_CHIP_UC}             \
+                ${BRD2_TYPE}                \
+                BLE5_ctr                    \
+                ${BRD2_DAP_SN}              \
+                False                        \
+                True
+            set +x
 
+            echo $SH_RESET_BRD2
+            echo "#!/usr/bin/env bash" > $SH_RESET_BRD2
+            echo "bash -e $MSDK/.github/workflows/scripts/build_flash.sh ${MSDK} /home/$USER/Tools/openocd ${BRD2_CHIP_UC} ${BRD2_TYPE} BLE5_ctr ${BRD2_DAP_SN} False True" >> $SH_RESET_BRD2
+            echo "sleep 10" >> $SH_RESET_BRD2
+            chmod u+x $SH_RESET_BRD2
+            cat $SH_RESET_BRD2
+            echo
+        fi
+        
         TEMP1=`date +%M`
         TEMP2=`date +%S`
         ADDR1=00:18:80:$TEMP1:$TEMP2:01
@@ -270,7 +288,7 @@ for ((phy=3;phy<=3;phy++)); do
         unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
             --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
             --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
-            --tp0 "$CON_PORT1" --tp1 $CON_PORT2     \
+            --tp0 "$CON_PORT1" --tp1 "$CON_PORT2"   \
             --time 35 --tshark /usr/bin/tshark      \
             --phy $phy
         #set +x
