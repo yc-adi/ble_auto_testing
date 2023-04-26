@@ -296,7 +296,9 @@ class SnifferCollector(Notifications.Notifier):
         return None
 
     def _startScanning(self, findScanRsp = False, findAux = False, scanCoded = False):
-        logging.info("starting scan")
+        msg = "starting scan"
+        print(f'\n{msg}')
+        logging.info(msg)
 
         if self.state == STATE_FOLLOWING:
             logging.info("Stopped sniffing device")

@@ -282,10 +282,12 @@ class PacketReader(Notifications.Notifier):
             return packet
 
     def sendPacket(self, id, payload):
-        print(f'\n<<< sendPacket to sniffer: {uart_proto_id_str[id]}\n')
+        #print(f'\n<<< sendPacket to sniffer: {uart_proto_id_str[id]}\n')
         packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + \
                      toLittleEndian(self.packetCounter, 2) + [id] + payload
+        #print(f'!!sendPacket: {packetList}')
         packetList = self.encodeToSLIP(packetList)
+        print(f'!!sendPacket: {packetList}')
         self.packetCounter += 1
         self.uart.writeList(packetList)
 
@@ -297,10 +299,10 @@ class PacketReader(Notifications.Notifier):
     def sendFollow(self, addr, followOnlyAdvertisements = False, followOnlyLegacy = False, followCoded = False):
         flags0 = followOnlyAdvertisements | (followOnlyLegacy << 1) | (followCoded << 2)
         print(f'addr: {addr} ' + "Follow flags: %s" % bin(flags0))
-        if addr:
-            self.sendPacket(REQ_FOLLOW, addr + [flags0])
+        self.sendPacket(REQ_FOLLOW, addr + [flags0])
 
     def sendPingReq(self):
+        print(f'sendPingReq()')
         self.sendPacket(PING_REQ, [])
 
     def getBytes(self, value, size):
@@ -314,32 +316,39 @@ class PacketReader(Notifications.Notifier):
     def sendTK(self, TK):
         TK = self.getBytes(TK, 16)
         self.sendPacket(SET_TEMPORARY_KEY, TK)
+        print("Sent TK to sniffer: " + str(TK))
         logging.info("Sent TK to sniffer: " + str(TK))
 
     def sendPrivateKey(self, pk):
         pk = self.getBytes(pk, 32)
         self.sendPacket(SET_PRIVATE_KEY, pk)
+        print("Sent private key to sniffer: " + str(pk))
         logging.info("Sent private key to sniffer: " + str(pk))
 
     def sendLegacyLTK(self, ltk):
         ltk = self.getBytes(ltk, 16)
         self.sendPacket(SET_LEGACY_LONG_TERM_KEY, ltk)
+        print("Sent Legacy LTK to sniffer: " + str(ltk))
         logging.info("Sent Legacy LTK to sniffer: " + str(ltk))
 
     def sendSCLTK(self, ltk):
         ltk = self.getBytes(ltk, 16)
         self.sendPacket(SET_SC_LONG_TERM_KEY, ltk)
+        print("Sent SC LTK to sniffer: " + str(ltk))
         logging.info("Sent SC LTK to sniffer: " + str(ltk))
 
     def sendIRK(self, irk):
         irk = self.getBytes(irk, 16)
         self.sendPacket(SET_IDENTITY_RESOLVING_KEY, irk)
+        print("Sent IRK to sniffer: " + str(irk))
         logging.info("Sent IRK to sniffer: " + str(irk))
 
     def sendSwitchBaudRate(self, newBaudRate):
+        print(f'!!sendSwitchBaudRate()')
         self.sendPacket(SWITCH_BAUD_RATE_REQ, toLittleEndian(newBaudRate, 4))
 
     def switchBaudRate(self, newBaudRate):
+        print(f'!!sendBaudRate()')
         self.uart.switchBaudRate(newBaudRate)
 
     def sendHopSequence(self, hopSequence):
@@ -347,16 +356,20 @@ class PacketReader(Notifications.Notifier):
             if chan not in VALID_ADV_CHANS:
                 raise Exceptions.InvalidAdvChannel("%s is not an adv channel" % str(chan))
         payload = [len(hopSequence)] + hopSequence + [37]*(3-len(hopSequence))
+        print(f'!!sendHopSequence()')
         self.sendPacket(SET_ADV_CHANNEL_HOP_SEQ, payload)
         self.notify("NEW_ADV_HOP_SEQ", {"hopSequence":hopSequence})
 
     def sendVersionReq(self):
+        print(f'!!sendVersion()')
         self.sendPacket(REQ_VERSION, [])
 
     def sendTimestampReq(self):
+        (f'!!sendTimestampReq')
         self.sendPacket(REQ_TIMESTAMP, [])
 
     def sendGoIdle(self):
+        print(f'!!sendGoIdle')
         self.sendPacket(GO_IDLE, [])
 
 

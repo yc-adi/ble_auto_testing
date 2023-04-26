@@ -1,0 +1,183 @@
+26-Apr-2023 14:11:05 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:11:05 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:11:05 (-0500) INFO: Started PID 1598163
+26-Apr-2023 14:11:05 (-0500) INFO: Namespace(capture=True, extcap_interfaces=False, extcap_interface='/dev/ttyACM6-3.6', extcap_dlts=False, extcap_config=False, extcap_capture_filter=None, fifo='/tmp/wireshark_extcap_-dev-ttyACM6-3.64NF431', extcap_control_in='/tmp/wireshark_control_ws_to_ext_-dev-ttyACM6-3.6MJF431', extcap_control_out='/tmp/wireshark_control_ext_to_ws_-dev-ttyACM6-3.63NC431', extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=True, scan_follow_aux=True, coded=False)
+26-Apr-2023 14:11:05 (-0500) INFO: sniffer capture
+26-Apr-2023 14:11:05 (-0500) INFO: Log started at Wed Apr 26 14:11:05 2023
+26-Apr-2023 14:11:05 (-0500) INFO: Extcap version 3.6
+26-Apr-2023 14:11:05 (-0500) INFO: Opening serial port /dev/ttyACM6
+26-Apr-2023 14:11:05 (-0500) INFO: closing UART
+26-Apr-2023 14:11:05 (-0500) INFO: /tmp/logs/capture.pcap
+26-Apr-2023 14:11:05 (-0500) INFO: Opening serial port /dev/ttyACM6
+26-Apr-2023 14:11:05 (-0500) INFO: args: ()
+26-Apr-2023 14:11:05 (-0500) INFO: kwargs: {'callbacks': [('*', <bound method Notifier.passOnNotification of <Sniffer(Thread-3, initial)>>)]}
+26-Apr-2023 14:11:05 (-0500) INFO: board ID: 6
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendHopSequence(), [3, 37, 38, 39]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 4, 1, 0, 0, 23, 3, 37, 38, 39]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 4, 1, 0, 0, 23, 3, 37, 38, 39, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: Sniffer created
+26-Apr-2023 14:11:05 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendVersion()
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 0, 1, 1, 0, 27]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 1, 0, 27, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: sendPingReq()
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 0, 1, 2, 0, 13]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 2, 0, 13, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendTimestampReq
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 0, 1, 3, 0, 29]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 3, 0, 29, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: sniffer started
+26-Apr-2023 14:11:05 (-0500) INFO: starting scan
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 1, 1, 4, 0, 7, 3]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 1, 1, 4, 0, 7, 3, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: !! sendScan(), Scan flags: 0b11
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [6, 16, 1, 5, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+26-Apr-2023 14:11:05 (-0500) INFO: !!sendPacket: [171, 6, 16, 1, 5, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188]
+26-Apr-2023 14:11:05 (-0500) INFO: !!Sent TK to sniffer: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+26-Apr-2023 14:11:05 (-0500) INFO: scanning started
+26-Apr-2023 14:11:05 (-0500) INFO: defaults written
+26-Apr-2023 14:11:05 (-0500) INFO: control loop
+26-Apr-2023 14:11:07 (-0500) INFO: gap in packets, between 22026 and 39163 packet before: [19, 0, 3, 10, 86, 6, 10, 11, 9, 34, 1, 19, 172, 180, 208, 18, 179, 24, 12, 34, 13, 0, 241, 166, 210] packet after: [0, 0, 3, 251, 152, 14]
+26-Apr-2023 14:11:07 (-0500) INFO: gap in packets, between 39163 and 43867 packet before: [0, 0, 3, 251, 152, 14] packet after: [25, 0, 3, 91, 171, 2, 10, 1, 38, 43, 0, 0, 19, 3, 197, 58, 214, 190, 137, 142, 32, 6, 1, 34, 17, 128, 24, 0, 7, 224, 191]
+26-Apr-2023 14:11:07 (-0500) INFO: gap in packets, between 43868 and 45140 packet before: [25, 0, 3, 92, 171, 2, 10, 1, 39, 63, 0, 0, 111, 6, 197, 58, 214, 190, 137, 142, 32, 6, 1, 34, 17, 128, 24, 0, 7, 224, 191] packet after: [5, 0, 3, 84, 176, 28, 52, 46, 49, 46, 48]
+26-Apr-2023 14:11:07 (-0500) INFO: !!RESP_VERSION: Firmware version 4.1.0
+26-Apr-2023 14:11:07 (-0500) INFO: gap in packets, between 45140 and 45247 packet before: [5, 0, 3, 84, 176, 28, 52, 46, 49, 46, 48] packet after: [56, 0, 3, 191, 176, 2, 10, 1, 37, 44, 0, 0, 176, 173, 147, 59, 214, 190, 137, 142, 66, 37, 240, 241, 93, 43, 3, 25, 30, 255, 6, 0, 1, 9, 32, 2, 233, 242, 165, 80, 117, 137, 234, 174, 163, 172, 60, 176, 229, 126, 227, 235, 175, 5, 134, 37, 133, 2, 161, 211, 249, 135]
+26-Apr-2023 14:11:19 (-0500) INFO: follow_device: [b'0', b' 24', b' 128', b' 17', b' 34', b' 1', b' 0']
+26-Apr-2023 14:11:19 (-0500) INFO: !!_startFollowing(), dev: Bluetooth LE device """" ([0, 24, 128, 17, 34, 1, 0]), OnlyAdv: False, OnlyLegacy: False, Coded: False
+26-Apr-2023 14:11:19 (-0500) INFO: !!DEVICE_FOLLOWED: Bluetooth LE device """" ([0, 24, 128, 17, 34, 1, 0])
+26-Apr-2023 14:11:19 (-0500) INFO: !!Sniffing device 0 - """"
+26-Apr-2023 14:11:19 (-0500) INFO: sendFollow(), Follow flags: 0b0
+26-Apr-2023 14:11:19 (-0500) INFO: !!sendPacket: [6, 8, 1, 6, 0, 0, 0, 24, 128, 17, 34, 1, 0, 0]
+26-Apr-2023 14:11:19 (-0500) INFO: !!sendPacket: [171, 6, 8, 1, 6, 0, 0, 0, 24, 128, 17, 34, 1, 0, 0, 188]
+26-Apr-2023 14:11:20 (-0500) INFO: Following 00:18:80:11:22:01  public 
+26-Apr-2023 14:11:42 (-0500) INFO: exiting control loop
+26-Apr-2023 14:11:42 (-0500) INFO: Tearing down
+26-Apr-2023 14:11:42 (-0500) INFO: closing UART
+26-Apr-2023 14:11:42 (-0500) INFO: Packet read timed out.
+26-Apr-2023 14:11:42 (-0500) INFO: Exiting
+26-Apr-2023 14:11:42 (-0500) INFO: main exit PID 1598163
+26-Apr-2023 14:11:42 (-0500) INFO: Exiting PID 1598163
+26-Apr-2023 14:15:31 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:31 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:31 (-0500) INFO: Started PID 1600770
+26-Apr-2023 14:15:31 (-0500) INFO: Namespace(capture=False, extcap_interfaces=True, extcap_interface=None, extcap_dlts=False, extcap_config=False, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version='3.6', device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:31 (-0500) INFO: Opening serial port /dev/ttyS4
+26-Apr-2023 14:15:32 (-0500) INFO: closing UART
+26-Apr-2023 14:15:32 (-0500) INFO: Opening serial port /dev/ttyS4
+26-Apr-2023 14:15:32 (-0500) INFO: closing UART
+26-Apr-2023 14:15:32 (-0500) INFO: Opening serial port /dev/ttyS0
+26-Apr-2023 14:15:32 (-0500) INFO: closing UART
+26-Apr-2023 14:15:32 (-0500) INFO: Opening serial port /dev/ttyS0
+26-Apr-2023 14:15:32 (-0500) INFO: closing UART
+26-Apr-2023 14:15:32 (-0500) INFO: Opening serial port /dev/ttyUSB1
+26-Apr-2023 14:15:33 (-0500) INFO: closing UART
+26-Apr-2023 14:15:33 (-0500) INFO: Opening serial port /dev/ttyUSB1
+26-Apr-2023 14:15:33 (-0500) INFO: closing UART
+26-Apr-2023 14:15:33 (-0500) INFO: Opening serial port /dev/ttyUSB0
+26-Apr-2023 14:15:33 (-0500) INFO: closing UART
+26-Apr-2023 14:15:33 (-0500) INFO: Opening serial port /dev/ttyUSB0
+26-Apr-2023 14:15:34 (-0500) INFO: closing UART
+26-Apr-2023 14:15:34 (-0500) INFO: Opening serial port /dev/ttyACM7
+26-Apr-2023 14:15:34 (-0500) INFO: closing UART
+26-Apr-2023 14:15:34 (-0500) INFO: Opening serial port /dev/ttyACM7
+26-Apr-2023 14:15:34 (-0500) INFO: closing UART
+26-Apr-2023 14:15:34 (-0500) INFO: Opening serial port /dev/ttyACM5
+26-Apr-2023 14:15:35 (-0500) INFO: closing UART
+26-Apr-2023 14:15:35 (-0500) INFO: Opening serial port /dev/ttyACM5
+26-Apr-2023 14:15:35 (-0500) INFO: closing UART
+26-Apr-2023 14:15:35 (-0500) INFO: Opening serial port /dev/ttyACM4
+26-Apr-2023 14:15:35 (-0500) INFO: closing UART
+26-Apr-2023 14:15:35 (-0500) INFO: Opening serial port /dev/ttyACM4
+26-Apr-2023 14:15:36 (-0500) INFO: closing UART
+26-Apr-2023 14:15:36 (-0500) INFO: Opening serial port /dev/ttyACM2
+26-Apr-2023 14:15:36 (-0500) INFO: closing UART
+26-Apr-2023 14:15:36 (-0500) INFO: Opening serial port /dev/ttyACM2
+26-Apr-2023 14:15:36 (-0500) INFO: closing UART
+26-Apr-2023 14:15:36 (-0500) INFO: Opening serial port /dev/ttyACM6
+26-Apr-2023 14:15:36 (-0500) INFO: closing UART
+26-Apr-2023 14:15:36 (-0500) INFO: Opening serial port /dev/ttyACM0
+26-Apr-2023 14:15:36 (-0500) INFO: closing UART
+26-Apr-2023 14:15:36 (-0500) INFO: Opening serial port /dev/ttyACM1
+26-Apr-2023 14:15:37 (-0500) INFO: closing UART
+26-Apr-2023 14:15:37 (-0500) INFO: Opening serial port /dev/ttyACM1
+26-Apr-2023 14:15:37 (-0500) INFO: closing UART
+26-Apr-2023 14:15:37 (-0500) INFO: Exiting PID 1600770
+26-Apr-2023 14:15:37 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:37 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:37 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:37 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:37 (-0500) INFO: Started PID 1600864
+26-Apr-2023 14:15:37 (-0500) INFO: Namespace(capture=False, extcap_interfaces=False, extcap_interface='/dev/ttyACM6-3.6', extcap_dlts=False, extcap_config=True, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:37 (-0500) INFO: main exit PID 1600864
+26-Apr-2023 14:15:37 (-0500) INFO: Exiting PID 1600864
+26-Apr-2023 14:15:37 (-0500) INFO: Started PID 1600867
+26-Apr-2023 14:15:37 (-0500) INFO: Namespace(capture=False, extcap_interfaces=False, extcap_interface='/dev/ttyACM0-3.6', extcap_dlts=False, extcap_config=True, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:37 (-0500) INFO: main exit PID 1600867
+26-Apr-2023 14:15:37 (-0500) INFO: Exiting PID 1600867
+26-Apr-2023 14:15:37 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:37 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:37 (-0500) INFO: Started PID 1600894
+26-Apr-2023 14:15:37 (-0500) INFO: Namespace(capture=False, extcap_interfaces=False, extcap_interface='/dev/ttyACM0-3.6', extcap_dlts=True, extcap_config=False, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:37 (-0500) INFO: main exit PID 1600894
+26-Apr-2023 14:15:37 (-0500) INFO: Exiting PID 1600894
+26-Apr-2023 14:15:38 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:38 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:38 (-0500) INFO: Started PID 1600902
+26-Apr-2023 14:15:38 (-0500) INFO: Namespace(capture=False, extcap_interfaces=False, extcap_interface='/dev/ttyACM6-3.6', extcap_dlts=True, extcap_config=False, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:38 (-0500) INFO: main exit PID 1600902
+26-Apr-2023 14:15:38 (-0500) INFO: Exiting PID 1600902
+26-Apr-2023 14:15:48 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:48 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:48 (-0500) INFO: Started PID 1601014
+26-Apr-2023 14:15:48 (-0500) INFO: Namespace(capture=False, extcap_interfaces=False, extcap_interface='/dev/ttyACM6-3.6', extcap_dlts=False, extcap_config=True, extcap_capture_filter=None, fifo=None, extcap_control_in=None, extcap_control_out=None, extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=False, scan_follow_aux=False, coded=False)
+26-Apr-2023 14:15:48 (-0500) INFO: main exit PID 1601014
+26-Apr-2023 14:15:48 (-0500) INFO: Exiting PID 1601014
+26-Apr-2023 14:15:48 (-0500) INFO: --------------------------------------------------------
+26-Apr-2023 14:15:48 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:48 (-0500) INFO: Started PID 1601022
+26-Apr-2023 14:15:48 (-0500) INFO: Namespace(capture=True, extcap_interfaces=False, extcap_interface='/dev/ttyACM6-3.6', extcap_dlts=False, extcap_config=False, extcap_capture_filter=None, fifo='/tmp/wireshark_extcap_-dev-ttyACM6-3.6RO4731', extcap_control_in='/tmp/wireshark_control_ws_to_ext_-dev-ttyACM6-3.63J4731', extcap_control_out='/tmp/wireshark_control_ext_to_ws_-dev-ttyACM6-3.6II4731', extcap_version=None, device='', baudrate=None, only_advertising=False, only_legacy_advertising=False, scan_follow_rsp=True, scan_follow_aux=True, coded=False)
+26-Apr-2023 14:15:48 (-0500) INFO: sniffer capture
+26-Apr-2023 14:15:48 (-0500) INFO: Log started at Wed Apr 26 14:15:48 2023
+26-Apr-2023 14:15:48 (-0500) INFO: Extcap version 3.6
+26-Apr-2023 14:15:48 (-0500) INFO: Opening serial port /dev/ttyACM6
+26-Apr-2023 14:15:48 (-0500) INFO: closing UART
+26-Apr-2023 14:15:48 (-0500) INFO: /tmp/logs/capture.pcap
+26-Apr-2023 14:15:48 (-0500) INFO: Opening serial port /dev/ttyACM6
+26-Apr-2023 14:15:48 (-0500) INFO: args: ()
+26-Apr-2023 14:15:48 (-0500) INFO: kwargs: {'callbacks': [('*', <bound method Notifier.passOnNotification of <Sniffer(Thread-3, initial)>>)]}
+26-Apr-2023 14:15:48 (-0500) INFO: board ID: 6
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendHopSequence(), [3, 37, 38, 39]
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 4, 1, 0, 0, 23, 3, 37, 38, 39, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: Sniffer created
+26-Apr-2023 14:15:48 (-0500) INFO: Software version: 4.1.0
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendVersion()
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 1, 0, 27, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: sendPingReq()
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 2, 0, 13, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendTimestampReq
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 0, 1, 3, 0, 29, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: sniffer started
+26-Apr-2023 14:15:48 (-0500) INFO: starting scan
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 1, 1, 4, 0, 7, 3, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: !! sendScan(), Scan flags: 0b11
+26-Apr-2023 14:15:48 (-0500) INFO: !!sendPacket: [171, 6, 16, 1, 5, 0, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 188]
+26-Apr-2023 14:15:48 (-0500) INFO: !!Sent TK to sniffer: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+26-Apr-2023 14:15:48 (-0500) INFO: scanning started
+26-Apr-2023 14:15:48 (-0500) INFO: defaults written
+26-Apr-2023 14:15:48 (-0500) INFO: control loop
+26-Apr-2023 14:15:50 (-0500) INFO: !!RESP_VERSION: Firmware version 4.1.0
+26-Apr-2023 14:15:50 (-0500) INFO: !!RESP_TIMESTAMP: Firmware timestamp 1282669706 reference: Apr 26 2023 14:15:50.231205 CDT
+26-Apr-2023 14:15:55 (-0500) INFO: follow_device: [b'0', b' 24', b' 128', b' 17', b' 34', b' 1', b' 0']
+26-Apr-2023 14:15:55 (-0500) INFO: !!_startFollowing(), dev: Bluetooth LE device """" ([0, 24, 128, 17, 34, 1, 0]), OnlyAdv: False, OnlyLegacy: False, Coded: False
+26-Apr-2023 14:15:55 (-0500) INFO: !!DEVICE_FOLLOWED: Bluetooth LE device """" ([0, 24, 128, 17, 34, 1, 0])
+26-Apr-2023 14:15:55 (-0500) INFO: !!Sniffing device 0 - """"
+26-Apr-2023 14:15:55 (-0500) INFO: sendFollow(), Follow flags: 0b0
+26-Apr-2023 14:15:55 (-0500) INFO: !!sendPacket: [171, 6, 8, 1, 6, 0, 0, 0, 24, 128, 17, 34, 1, 0, 0, 188]
+26-Apr-2023 14:15:55 (-0500) INFO: Following 00:18:80:11:22:01  public 
+26-Apr-2023 14:16:22 (-0500) INFO: exiting control loop
+26-Apr-2023 14:16:22 (-0500) INFO: Tearing down
+26-Apr-2023 14:16:22 (-0500) INFO: closing UART
+26-Apr-2023 14:16:22 (-0500) INFO: Packet read timed out.
+26-Apr-2023 14:16:22 (-0500) INFO: Exiting
+26-Apr-2023 14:16:22 (-0500) INFO: main exit PID 1601022
+26-Apr-2023 14:16:22 (-0500) INFO: Exiting PID 1601022

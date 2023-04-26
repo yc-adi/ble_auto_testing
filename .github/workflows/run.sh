@@ -57,6 +57,15 @@ LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 
 #remove me !!! rm $MSDK/ble_auto_testing/output/*
 
+rm tmp/ci_test/timing/*.lock
+
+rm $MSDK/ble_auto_testing/EXTCAP_CONTROL_*
+rm $MSDK/ble_auto_testing/FIFO
+
+touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_IN
+touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_OUT
+touch $MSDK/ble_auto_testing/FIFO
+
 #set -e
 #set -o pipefail
 
@@ -281,11 +290,13 @@ for ((phy=2;phy<=2;phy++)); do
         
         TEMP1=`date +%M`
         TEMP2=`date +%S`
-        ADDR1=00:18:80:$TEMP1:$TEMP2:01
-        ADDR2=00:18:80:$TEMP1:$TEMP2:02
+        #ADDR1=00:18:80:$TEMP1:$TEMP2:01
+        #ADDR2=00:18:80:$TEMP1:$TEMP2:02
+        ADDR1=00:18:80:01:02:01
+        ADDR2=00:18:80:01:02:02
 
         #set -x
-        unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-None --device "" \
+        unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
             --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
             --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
             --tp0 "$CON_PORT1" --tp1 "$CON_PORT2"   \

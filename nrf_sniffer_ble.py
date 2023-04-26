@@ -130,7 +130,7 @@ capture_only_advertising = False
 capture_only_legacy_advertising = False
 capture_scan_response = True
 capture_scan_aux_pointer = True
-capture_coded = True
+capture_coded = False
 
 
 def extcap_config(interface):
@@ -334,7 +334,7 @@ def handle_control_command(sniffer, arg, typ, payload, auto_test=False, device_a
     if auto_test:
         # Instead of finding the device address, directly get from the user input
         device = Devices.Device(address=device_address, name='""', RSSI=0)
-        print(f'focus on device: {device}')
+        print(f'\nfocus on device: {device}')
         follow_device(sniffer, device)
     else:
         if arg == CTRL_ARG_DEVICE:
@@ -645,7 +645,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             setup_extcap_log_handler()
 
         if control_in is not None:
-            fn_ctrl_in = open(control_in, 'ab+', 0)
+            fn_ctrl_in = open(control_in, 'rb', 0)
 
         logging.info("Log started at %s", time.strftime("%c"))
 
@@ -851,8 +851,6 @@ def run_sniffer(params: dict):
     print(f'       capture_scan_aux_pointer: {capture_scan_aux_pointer}')
     print(f'                  capture_coded: {capture_coded}')
 
-    capture_coded = True
-
     interface = params["extcap_interface"]
 
     try:
@@ -953,6 +951,8 @@ def parse_args():
 
     try:
         args, unknown = parser.parse_known_args()
+        print(f'args:')
+        pprint(vars(args))
         logging.info(f'args: {args}')
         logging.info(f'unknown: {unknown}')
 
@@ -995,8 +995,8 @@ def parse_args():
 
     capture_only_advertising = args.only_advertising
     capture_only_legacy_advertising = args.only_legacy_advertising
-    capture_scan_response = args.scan_follow_rsp
-    capture_scan_aux_pointer = args.scan_follow_aux
+    capture_scan_response = True #args.scan_follow_rsp
+    capture_scan_aux_pointer = True #args.scan_follow_aux
     capture_coded = args.coded
 
     if args.extcap_config:
@@ -1004,7 +1004,7 @@ def parse_args():
     elif args.extcap_dlts:
         extcap_dlts(interface)
     elif args.capture:
-        pass
+        print(f'args.capture: {args.capture}')
     else:
         parser.print_help()
         sys.exit(ERROR_USAGE)

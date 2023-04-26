@@ -53,10 +53,15 @@ def get_capture_file_path(capture_file_path=None, auto_test=False, given_name=No
         default_path = os.path.join(DEFAULT_CAPTURE_FILE_DIR, DEFAULT_CAPTURE_FILE_NAME)
 
     if capture_file_path is None:
+        print(f'get_capture_file_path: {default_path}')
         return default_path
+
     if os.path.splitext(capture_file_path)[1] != ".pcap":
+        print(f'get_capture_file_path: {default_path}')
         return default_path
-    return os.path.abspath(capture_file_path)
+    path = os.path.abspath(capture_file_path)
+    print(f'get_capture_file_path: {path}')
+    return path
 
 
 class CaptureFileHandler:
