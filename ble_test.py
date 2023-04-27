@@ -301,8 +301,13 @@ def run_phy_timing_test(args, new_phy):
             return pcapng_file
 
 
-def parse_phy_timing_test_results(captured_file: str):
-    file_type = 1  # see parse_pcapng_file() description
+def parse_phy_timing_test_results(src, captured_file: str):
+    """
+    src
+        0: wireshark saved pcapng file
+        1: ble_auto_testing captured pcap file, converted to pcapng
+    """
+    file_type = src  # see parse_pcapng_file() description
     res = parse_pcapng_file(file_type, captured_file)
     return res
 
@@ -386,7 +391,7 @@ def full_test(args, parse_captured_file, new_phy):
 
     if captured_file is not None:
         if exists(captured_file):
-            parse_phy_timing_test_results(captured_file)
+            parse_phy_timing_test_results(1, captured_file)
 
         res = check_results(new_phy)
     else:

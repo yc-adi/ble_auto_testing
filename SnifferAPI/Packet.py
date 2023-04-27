@@ -400,7 +400,7 @@ class Packet:
             self.protover = packetList[PROTOVER_POS]
 
             if self.protover > PROTOVER_V3:
-                print(f'<3')
+                print(f'>V3')
                 logging.exception("Unsupported protocol version %s" % str(self.protover))
                 raise RuntimeError("Unsupported protocol version %s" % str(self.protover))
 
