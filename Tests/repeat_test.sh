@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-
+#
+# cd ~/Workspace/ble_auto_testing/Tests
+# ./repeat_test.sh 2>&1 | tee test.log
+# start: 09:43
+#   end: 
+#
 cd ~/Workspace/ble_auto_testing
 echo
 echo "PWD:" `pwd`

@@ -185,7 +185,7 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
 
     terminal_thd.input = "exit"
 
-    print(f'{str(datetime.datetime.now())} - Finish PHY timing test ({phy_cmd[new_phy - 1]}).\n')
+    print(f'\n<<<<<< Finish PHY timing test ({phy_cmd[new_phy - 1]}).\n')
 
 
 def run_sniffer(interface_name: str, device_name: str, dev_adv_addr: str, timeout: int, queue: Queue) -> dict:
@@ -331,10 +331,9 @@ def check_results(new_phy):
 
         print(f'TIFS, total: {len(all_tifs)}, max: {max_tifs} at {all_tifs.index(max_tifs)}, '
               f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
-        print(f'Address of all_tifs: {id(all_tifs)}')
 
         print(f"\n\n-------------------------------------------------------------------")
-        print(f'PHY: {phy_cmd[new_phy - 1]}')
+        print(f'                           PHY: {phy_cmd[new_phy - 1]}')
         if max_tifs <= 152 and min_tifs >= 148:
             print("                TIFS verification: PASS")
             res = 0

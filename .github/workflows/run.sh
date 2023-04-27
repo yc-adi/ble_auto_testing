@@ -1,4 +1,11 @@
 #!/bin/bash
+
+#
+# run BLE timing test
+# Example:
+#   ./run.sh 1 ~/Workspace/msdk_open `date +%Y-%m-%d_%H-%M-%S` 2>&1 | tee test.log
+#
+
 echo
 echo "####################################################################"
 echo "# The working folder is the root of repo ble_auto_testing.         #"
@@ -58,13 +65,6 @@ LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 rm $MSDK/ble_auto_testing/output/*
 
 rm tmp/ci_test/timing/*.lock
-
-rm $MSDK/ble_auto_testing/EXTCAP_CONTROL_*
-rm $MSDK/ble_auto_testing/FIFO
-
-touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_IN
-touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_OUT
-touch $MSDK/ble_auto_testing/FIFO
 
 #set -e
 #set -o pipefail
@@ -197,13 +197,20 @@ echo "python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_
 bash -x -c "cat $LOCK_FILE"
 echo
 
-LIMIT=1  # remove me !!!
+LIMIT=3
 SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
 SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
 # not support coded
 # https://devzone.nordicsemi.com/f/nordic-q-a/54401/sniffing-ble-5-0-le-coded-phy-packets-using-nrf52840
-for ((phy=2;phy<=2;phy++)); do
+for ((phy=2;phy<=4;phy++)); do
+    rm $MSDK/ble_auto_testing/EXTCAP_CONTROL_*
+    rm $MSDK/ble_auto_testing/FIFO
+
+    touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_IN
+    touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_OUT
+    touch $MSDK/ble_auto_testing/FIFO
+
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
     while true
@@ -326,7 +333,7 @@ yes | cp -p output/*.* /tmp/ci_test/timing/
 python3 ~/Workspace/Resource_Share/Resource_Share_multiboard.py -b ${BRD1_LOCK} -b ${BRD2_LOCK}
 
 printf "\n#------------------------------------------------\n"
-if [[ $phy -gt 4 ]]; then
+if [[ $phy -gt 5 ]]; then
     printf "\n# FAILED\n"
 else
     printf "\n# PASSED\n"

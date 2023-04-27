@@ -74,7 +74,6 @@ test_log = open("test_packet_info.log", "w")
 test_tifs_log = open("test_tifs_log.log", "w")
 
 all_tifs = list()
-print(f'Address of all_tifs: {id(all_tifs)}')
 
 # PHY switching state
 PHY_SW_ST_INIT = 0
@@ -571,25 +570,29 @@ class Packet:
                                         phy_switch_state = PHY_SW_ST_REQ
                                         phy_switch_start = self.packet_time_from_pcap
                                         payload = self.blePacket.payload.hex()
-                                        msg = f'LL_PHY_REQ: packet cnt: {self.packetCounter}, ' \
-                                              f'payload: {payload}, {phy_switch_start}'
+                                        msg = f'LL_PHY_REQ:\n\tpacket cnt: {self.packetCounter}'                \
+                                              f'\n\tself.packet_time_from_pcap: {self.packet_time_from_pcap}'
                                         print(msg)
                                         test_log.write(f'{msg}\n')
 
                             if phy_switch_state == PHY_SW_ST_REQ:
-                                if self.phy == PHY_2M:
+                                if self.phy != PHY_1M:
                                     phy_switch_state = PHY_SW_ST_DONE
                                     phy_switch_end = self.packet_time_from_pcap
                                     phy_switch_time = phy_switch_end - phy_switch_start
-                                    msg = f'PHY switch time: {phy_switch_time*1E3:.3f} ms'
+                                    msg = f'new PHY applied:\n'                                             \
+                                          f'\tself.phy: {self.phy}\n'                                       \
+                                          f'\tself.packet_time_from_pcap: {self.packet_time_from_pcap}\n'   \
+                                          f'\tPHY switch time: {phy_switch_time*1E3:.3f} ms'
                                     print(f'{msg}\n')
 
                         #
                         # Check T_IFS
                         #
-                        if self.packet_reader is not None \
-                                and self.packet_reader.last_ble_packet is not None \
-                                and self.blePacket is not None:
+                        if self.packet_reader is not None                               \
+                                and self.packet_reader.last_ble_packet is not None      \
+                                and self.blePacket is not None                          \
+                                and phy_switch_state == PHY_SW_ST_INIT:
                             # With advertising packet and data packet
                             if packet_type == PACKET_TYPE_DATA and self.packet_reader.detected_connection:
                                 if not self.direction:      # False: slave to master
