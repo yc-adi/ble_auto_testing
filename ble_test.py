@@ -333,7 +333,7 @@ def check_results(new_phy):
               f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
 
         print(f"\n\n-------------------------------------------------------------------")
-        print(f'                           PHY: {phy_cmd[new_phy - 1]}')
+        print(f'                             PHY: {phy_cmd[new_phy - 1]}')
         if max_tifs <= 152 and min_tifs >= 148:
             print("                TIFS verification: PASS")
             res = 0
