@@ -55,7 +55,7 @@ fi
 mkdir -p /tmp/ci_test/timing
 LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 
-#remove me !!! rm $MSDK/ble_auto_testing/output/*
+rm $MSDK/ble_auto_testing/output/*
 
 rm tmp/ci_test/timing/*.lock
 

@@ -285,7 +285,6 @@ class PacketReader(Notifications.Notifier):
         #print(f'\n<<< sendPacket to sniffer: {uart_proto_id_str[id]}\n')
         packetList = [HEADER_LENGTH] + [len(payload)] + [PROTOVER_V1] + \
                      toLittleEndian(self.packetCounter, 2) + [id] + payload
-        #print(f'!!sendPacket: {packetList}')
         packetList = self.encodeToSLIP(packetList)
         print(f'!!sendPacket: {packetList}')
         self.packetCounter += 1

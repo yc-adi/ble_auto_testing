@@ -108,7 +108,7 @@ class Sniffer(threading.Thread, SnifferCollector.SnifferCollector):
     # This will cause it to stop sniffing any device it is sniffing at the moment.
     # Returns nothing.
     def scan(self, findScanRsp=False, findAux=False, scanCoded=False):
-        msg = f'findScanRsp: {findScanRsp}, findAux: {findAux}, scanCoded: {scanCoded}'
+        msg = f'scan(), findScanRsp: {findScanRsp}, findAux: {findAux}, scanCoded: {scanCoded}'
         print(f'{msg}')
         logging.info(msg)
         self._startScanning(findScanRsp, findAux, scanCoded)

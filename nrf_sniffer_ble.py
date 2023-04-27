@@ -645,6 +645,7 @@ def sniffer_capture(interface, baudrate, fifo, control_in, control_out, auto_tes
             setup_extcap_log_handler()
 
         if control_in is not None:
+            # old version: fn_ctrl_in = open(control_in, 'ab+', 0)
             fn_ctrl_in = open(control_in, 'rb', 0)
 
         logging.info("Log started at %s", time.strftime("%c"))

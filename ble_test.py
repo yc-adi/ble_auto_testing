@@ -391,7 +391,9 @@ def full_test(args, parse_captured_file, new_phy):
 
     if captured_file is not None:
         if exists(captured_file):
-            parse_phy_timing_test_results(1, captured_file)
+            # for sniffer nrf version 4.1.0, there src type 0 although it is from pcap converted
+            #                         4.0.0, src type 1
+            parse_phy_timing_test_results(0, captured_file)
 
         res = check_results(new_phy)
     else:

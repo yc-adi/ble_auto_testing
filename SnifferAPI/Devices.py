@@ -119,9 +119,9 @@ class DeviceList(Notifications.Notifier):
     def setFollowed(self, device):
         if device in self.devices:
             for dev in self.devices:
-                dev.followed = False
+                dev.followed = False # stop any possible following devices
             device.followed = True
-        #device.followed = True  # TODO: verify the logic of this whole function.
+
         self.notify("DEVICE_FOLLOWED", device)
 
     def asList(self):

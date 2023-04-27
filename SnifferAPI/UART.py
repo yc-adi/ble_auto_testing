@@ -186,7 +186,6 @@ class Uart:
 
     def writeList(self, array):
         try:
-            #print(f'\nwrite data to UART\n')
             self.ser.write(array)
         except serial.SerialTimeoutException:
             print("Got write timeout, ignoring error")
