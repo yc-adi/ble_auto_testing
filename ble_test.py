@@ -170,9 +170,13 @@ def phy_timing_test(terminal_thd, addr1, addr2, new_phy):
     terminal_thd.input_cmd(1, "init -l 6 -s " + addr1)
     time.sleep(1)
 
-    print(f'\nmaster: change PHY to {new_phy}\n')
-    terminal_thd.input_cmd(0, "phy " + str(new_phy))  # the PHY switching time is about 59.7 ms.
-    #terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
+    # NOTE: if nordic board is BT_VER 11, the PHY change will fail.
+
+    #print(f'\nmaster: change PHY to {new_phy}\n')  # this works for two nRF52840 boards
+    #terminal_thd.input_cmd(0, "phy " + str(new_phy))  # the PHY switching time is about 59.7 ms.
+    
+    print(f'\nslave: change PHY to {new_phy}\n')
+    terminal_thd.input_cmd(1, "phy " + str(new_phy))  # the PHY switching time is about 67.5 ms.
     time.sleep(1)
 
     print(f'\nmaster: reset\n')
@@ -333,7 +337,7 @@ def check_results(new_phy):
               f'min: {min_tifs} at {all_tifs.index(min_tifs)}, average: {avg:.1f}, median: {statistics.median(all_tifs)}')
 
         print(f"\n\n-------------------------------------------------------------------")
-        print(f'                             PHY: {phy_cmd[new_phy - 1]}')
+        print(f'                              PHY: {phy_cmd[new_phy - 1]}')
         if max_tifs <= 152 and min_tifs >= 148:
             print("                TIFS verification: PASS")
             res = 0
