@@ -87,6 +87,8 @@ if [ "x$MSDK_COMMIT" != "x" ]; then
     cd $MSDK/ble_auto_testing/
     git branch
     git status -u
+    git checkout -- .
+    git fetch
     git checkout $MSDK_COMMIT
     set +x
 fi
@@ -375,14 +377,20 @@ do
     printf "\n#------------------------------------------------\n"
     if [[ $phy -gt 5 ]]; then
         printf "\n# FAILED\n"
-
+        result=FAILED
         break  # no need to do the reset
     else
         printf "\n# PASSED\n"
+        result=PASSED
     fi
 done
 
-printf "\n\n#------------------------------------------------------------------"
-printf "# DONE!"
-printf "#------------------------------------------------------------------------\n\n"
+printf "\n\n#------------------------------------------------------------------------"
+printf "\n# DONE!"
+printf "\n#------------------------------------------------------------------------\n\n"
 
+if [ "$result" == "PASSED" ]; then
+    exit 0
+else
+    exit 1
+fi
