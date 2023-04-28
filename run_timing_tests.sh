@@ -26,9 +26,11 @@ conda activate py3_10
 #source ./venv/bin/activate
 #python -m pip install -r requirements.txt
 
+set -x
 mkdir -p /tmp/ci_test/timing/
 rm ${MSDK}/ble_auto_testing/output/*.pc*
 rm ${MSDK}/ble_auto_testing/output/sniffer.log
+set +x
 
 LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 
@@ -45,6 +47,15 @@ function cleanup {
         set +x
     fi
     printf "\n<<<<<< EXIT <<<<<<\n\n"
+
+    echo "FINAL_RES: $FINAL_RES"
+    if [ "$FINAL_RES" == "PASSED" ]; then
+	echo "exit 0"
+        exit 0
+    else
+        echo "exit 1"
+        exit 1
+    fi
 }
 #--------------------------------------------------------------------------------------------------
 
@@ -95,8 +106,14 @@ if [ "x$MSDK_COMMIT" != "x" ]; then
     git branch
     git status -u
     git checkout main
+
+    cd $MSDK/Libraries/RF-PHY-closed/MAX32655/build/gcc
+    make clean
+    make all
     set +x
 fi
+
+cd $MSDK
 
 RUN_TEST=0
 for ((i=0; i<DUT_num; i++))
@@ -245,19 +262,21 @@ do
     echo
 
     LIMIT=3
+
     SH_RESET_BRD1=/tmp/ci_test/timing/${TEST_TIME}_brd1_reset.sh
     SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 
-    # not support coded
     # https://devzone.nordicsemi.com/f/nordic-q-a/54401/sniffing-ble-5-0-le-coded-phy-packets-using-nrf52840
     for ((phy=2;phy<=4;phy++)); do
+        set -x
         rm $MSDK/ble_auto_testing/EXTCAP_CONTROL_*
         rm $MSDK/ble_auto_testing/FIFO
 
         touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_IN
         touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_OUT
         touch $MSDK/ble_auto_testing/FIFO
-
+        set +x
+        
         printf "\n<<<<<< phy: $phy >>>>>>\n\n"
         tried=0
         while true
@@ -344,13 +363,13 @@ do
             
             TEMP1=`date +%M`
             TEMP2=`date +%S`
-            ADDR1=00:18:80:$TEMP1:$TEMP2:01
-            ADDR2=00:18:80:$TEMP1:$TEMP2:02
-            #ADDR1=00:18:80:01:02:01
-            #ADDR2=00:18:80:01:02:02
+            #ADDR1=00:18:80:$TEMP1:$TEMP2:01
+            #ADDR2=00:18:80:$TEMP1:$TEMP2:02
+            ADDR1=00:18:80:01:02:01
+            ADDR2=00:18:80:01:02:02
 
             #set -x
-            unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
+            unbuffer python3 $MSDK/ble_auto_testing/ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
                 --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
                 --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
                 --tp0 "$CON_PORT1" --tp1 "$CON_PORT2"   \
@@ -382,20 +401,22 @@ do
     printf "\n#------------------------------------------------\n"
     if [[ $phy -gt 5 ]]; then
         printf "\n# FAILED\n"
-        result=FAILED
+        FINAL_RES=FAILED
         break  # no need to do the reset
     else
         printf "\n# PASSED\n"
-        result=PASSED
+        FINAL_RES=PASSED
     fi
 done
 
 printf "\n\n#------------------------------------------------------------------------"
-printf "\n# DONE!"
+printf "\n# DONE with $FINAL_RES"
 printf "\n#------------------------------------------------------------------------\n\n"
 
-if [ "$result" == "PASSED" ]; then
+if [ "$FINAL_RES" == "PASSED" ]; then
+    echo "exit 0"
     exit 0
 else
-    exit 1
+    echo "exit 2"
+    exit 2
 fi
