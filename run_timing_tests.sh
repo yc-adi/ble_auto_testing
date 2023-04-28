@@ -50,19 +50,19 @@ FILE=/home/$USER/Workspace/ci_config/boards_config.json
 TEST_CONFIG_FILE=/home/$USER/Workspace/ci_config/timing_tests.json
 CONFIG_FILE=$TEST_CONFIG_FILE
 
-echo "cat ${CONFIG_FILE}"
+#echo "cat ${CONFIG_FILE}"
 #cat ${CONFIG_FILE}
-echo
+#echo
 
 HOST_NAME=`hostname`
 # skip FCC(file change check) or not
 SKIP_FCC=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
 printf "   SKIP_FCC: ${SKIP_FCC}\n\n"
 
-MSDK_COMMIT==`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
+MSDK_COMMIT=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
 printf "MSDK_COMMIT: ${MSDK_COMMIT}\n\n"
 
-if ["x$MSDK_COMMIT" != "x" ]; then
+if [ "x$MSDK_COMMIT" != "x" ]; then
     # need to switch to required version
     set -x
     cd $MSDK/ble_auto_testing/
@@ -83,7 +83,7 @@ do
     echo "#----------------------------------------------------------------------------------------------------"
     echo
     set +e
-    bash ${MSDK}/Libraries/RF-PHY-closed/.github/workflow/rf_phy_timing_test_file_change_check.sh \
+    bash ${MSDK}/Libraries/RF-PHY-closed/.github/workflows/rf_phy_timing_test_file_change_check.sh \
         $SKIP_FCC \
         $MSDK     \
         $CHIP_UC  \
