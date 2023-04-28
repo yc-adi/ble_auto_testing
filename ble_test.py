@@ -376,7 +376,7 @@ def check_results(new_phy):
         else:
             print(f'   Connection timing verification: PASS')
 
-    print("-------------------------------------------------------------------\n\n")
+    print("\n-------------------------------------------------------------------\n\n")
 
     return res
 
@@ -443,7 +443,7 @@ if __name__ == "__main__":
                 for f in failed_files:
                     shutil.copy(f, "/tmp/ci_results")
                     print(f'Save failed file: {f}')
-            exit(res)
+            sys.exit(res)
 
     print(f"\n{str(datetime.datetime.now())} - Done!")
 

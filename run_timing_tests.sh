@@ -33,6 +33,25 @@ rm ${MSDK}/ble_auto_testing/output/sniffer.log
 LOCK_FILE=/tmp/ci_test/timing/${TEST_TIME}.lock
 
 #--------------------------------------------------------------------------------------------------
+function cleanup {
+    set +x
+    printf "\n<<<<<<< cleanup before exit <<<<<<\n"
+    if [ -f $LOCK_FILE ]; then
+        echo "cat $LOCK_FILE"
+	cat $LOCK_FILE
+	echo
+        set -x
+        bash $LOCK_FILE
+        set +x
+    fi
+    printf "\n<<<<<< EXIT <<<<<<\n\n"
+}
+#--------------------------------------------------------------------------------------------------
+
+trap cleanup EXIT
+trap cleanup INT
+
+#--------------------------------------------------------------------------------------------------
 declare -A DUTs
 DUT_num=4
 DUTs[0,0]=MAX32655
@@ -82,7 +101,7 @@ do
     echo "# Check ${CHIP_UC} ${BRD_TYPE}"
     echo "#----------------------------------------------------------------------------------------------------"
     echo
-    set +e
+    
     bash ${MSDK}/Libraries/RF-PHY-closed/.github/workflows/scripts/rf_phy_timing_test_file_change_check.sh \
         $SKIP_FCC \
         $MSDK     \
@@ -90,8 +109,7 @@ do
         $BRD_TYPE
 
     RETVAL=$?
-    set -e
-
+    
     if [[ $RETVAL -eq 0 ]]; then
         RUN_TEST=1
         echo "Test is required."
@@ -124,13 +142,13 @@ do
     printf "DO_THIS: ${DO_THIS}\n\n"
     
     if [ ${DO_THIS} == "0" ]; then
-        printf "\n#--------------------------------------------------------------------"
-        printf "# Skip this ${CHIP_BRD_TYPE} board according to the configuration file."
-        printf "#--------------------------------------------------------------------\n"
+        printf "\n#----------------------------------------------------------------------"
+        printf "\n# Skip this ${CHIP_BRD_TYPE} board according to the configuration file."
+        printf "\n#----------------------------------------------------------------------\n"
         continue
     fi
 
-    BRD_AND_TYPE=${CHIP_BRD_TYPE..}  # convert to lower case
+    BRD_AND_TYPE=${CHIP_BRD_TYPE,,}  # convert to lowercase
 
     sniffer=`python3 -c "import sys, json; print(json.load(open('$TEST_CONFIG_FILE'))['ble_timing_verify.yml']['$HOST_NAME']['sniffer'])"`
     echo "     sniffer board: ${sniffer}"
