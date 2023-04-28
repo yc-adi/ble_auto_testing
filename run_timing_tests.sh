@@ -90,6 +90,11 @@ if [ "x$MSDK_COMMIT" != "x" ]; then
     git checkout -- .
     git fetch
     git checkout $MSDK_COMMIT
+
+    cd $MSDK/ble_auto_testing
+    git branch
+    git status -u
+    git checkout main
     set +x
 fi
 
