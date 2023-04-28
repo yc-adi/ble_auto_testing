@@ -78,7 +78,7 @@ HOST_NAME=`hostname`
 SKIP_FCC=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
 printf "   SKIP_FCC: ${SKIP_FCC}\n\n"
 
-MSDK_COMMIT=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
+MSDK_COMMIT=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['msdk_commit'])"`
 printf "MSDK_COMMIT: ${MSDK_COMMIT}\n\n"
 
 if [ "x$MSDK_COMMIT" != "x" ]; then
