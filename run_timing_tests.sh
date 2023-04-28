@@ -57,7 +57,20 @@ echo
 HOST_NAME=`hostname`
 # skip FCC(file change check) or not
 SKIP_FCC=`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
-printf "SKIP_FCC: ${SKIP_FCC}\n\n"
+printf "   SKIP_FCC: ${SKIP_FCC}\n\n"
+
+MSDK_COMMIT==`python3 -c "import json; import os; obj=json.load(open('${CONFIG_FILE}')); print(obj['${CI_TEST}']['${HOST_NAME}']['SKIP_FCC'])"`
+printf "MSDK_COMMIT: ${MSDK_COMMIT}\n\n"
+
+if ["x$MSDK_COMMIT" != "x" ]; then
+    # need to switch to required version
+    set -x
+    cd $MSDK/ble_auto_testing/
+    git branch
+    git status -u
+    git checkout $MSDK_COMMIT
+    set +x
+fi
 
 RUN_TEST=0
 for ((i=0; i<DUT_num; i++))
