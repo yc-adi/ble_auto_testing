@@ -83,7 +83,7 @@ do
     echo "#----------------------------------------------------------------------------------------------------"
     echo
     set +e
-    bash ${MSDK}/Libraries/RF-PHY-closed/.github/workflows/rf_phy_timing_test_file_change_check.sh \
+    bash ${MSDK}/Libraries/RF-PHY-closed/.github/workflows/scripts/rf_phy_timing_test_file_change_check.sh \
         $SKIP_FCC \
         $MSDK     \
         $CHIP_UC  \
