@@ -113,7 +113,7 @@ if [ "x$MSDK_COMMIT" != "x" ]; then
     set +x
 fi
 
-cd $MSDK
+cd $MSDK/ble_auto_testing
 
 RUN_TEST=0
 for ((i=0; i<DUT_num; i++))
@@ -368,14 +368,16 @@ do
             ADDR1=00:18:80:01:02:01
             ADDR2=00:18:80:01:02:02
 
-            #set -x
+            set -x
+            pwd
+
             unbuffer python3 $MSDK/ble_auto_testing/ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
                 --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
                 --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
                 --tp0 "$CON_PORT1" --tp1 "$CON_PORT2"   \
                 --time 35 --tshark /usr/bin/tshark      \
                 --phy $phy
-            #set +x
+            set +x
             if [[ $? == 0 ]]; then
                 printf "\nreturned: 0\n"
                 break

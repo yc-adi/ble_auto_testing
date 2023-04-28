@@ -207,12 +207,14 @@ SH_RESET_BRD2=/tmp/ci_test/timing/${TEST_TIME}_brd2_reset.sh
 # not support coded
 # https://devzone.nordicsemi.com/f/nordic-q-a/54401/sniffing-ble-5-0-le-coded-phy-packets-using-nrf52840
 for ((phy=2;phy<=4;phy++)); do
+    set -x
     rm $MSDK/ble_auto_testing/EXTCAP_CONTROL_*
     rm $MSDK/ble_auto_testing/FIFO
 
     touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_IN
     touch $MSDK/ble_auto_testing/EXTCAP_CONTROL_OUT
     touch $MSDK/ble_auto_testing/FIFO
+    set +x
 
     printf "\n<<<<<< phy: $phy >>>>>>\n\n"
     tried=0
@@ -305,14 +307,16 @@ for ((phy=2;phy<=4;phy++)); do
         ADDR1=00:18:80:01:02:01
         ADDR2=00:18:80:01:02:02
 
-        #set -x
-        unbuffer python3 ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
+        set -x
+        pwd
+        
+        unbuffer python3 $MSDK/ble_auto_testing/ble_test.py --interface ${SNIFFER_USB}-3.6 --device "" \
             --brd0-addr $ADDR1 --brd1-addr $ADDR2   \
             --sp0 $HCI_PORT1 --sp1 $HCI_PORT2       \
             --tp0 "$CON_PORT1" --tp1 "$CON_PORT2"   \
             --time 35 --tshark /usr/bin/tshark      \
             --phy $phy
-        #set +x
+        set +x
         if [[ $? == 0 ]]; then
             printf "\nreturned: 0\n"
             break
