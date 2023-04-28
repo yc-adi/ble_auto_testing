@@ -84,7 +84,7 @@ printf "MSDK_COMMIT: ${MSDK_COMMIT}\n\n"
 if [ "x$MSDK_COMMIT" != "x" ]; then
     # need to switch to required version
     set -x
-    cd $MSDK/ble_auto_testing/
+    cd $MSDK
     git branch
     git status -u
     git checkout -- .
