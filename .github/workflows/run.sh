@@ -74,6 +74,9 @@ function cleanup {
     set +x
     printf "\n<<<<<<< cleanup before exit\n"
     if [ -f $LOCK_FILE ]; then
+        echo "cat $LOCK_FILE"
+	cat $LOCK_FILE
+	echo
         set -x
         bash $LOCK_FILE
         set +x
@@ -282,7 +285,7 @@ for ((phy=2;phy<=4;phy++)); do
                 ${BRD2_TYPE}                \
                 BLE5_ctr                    \
                 ${BRD2_DAP_SN}              \
-                False                        \
+                True                        \
                 True
             set +x
 
