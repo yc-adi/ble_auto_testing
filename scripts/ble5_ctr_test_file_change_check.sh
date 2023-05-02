@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 echo
 echo "#################################################################################################################"
 echo "# ble5_ctr_best_file_change_check.sh 1_SKIP_FCC 2_MSDK 3_CHIP_UC 4_BRD_TYPE                                     #"

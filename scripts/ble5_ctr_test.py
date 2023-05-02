@@ -78,7 +78,7 @@ def test_on_board(user_args):
     obj = json.load(open(file))
     hostname = socket.gethostname()
     brd2 = obj["ble5_ctr_test.yml"][hostname][chip_and_board]["board2"]
-    print(f'board 2: {brd2}')
+    print(f'    board 2: {brd2}')
 
     file = os.path.expanduser("~/Workspace/ci_config/boards_config.json")
     obj = json.load(open(file))
